@@ -4,6 +4,10 @@ local Constants, Event
 function Controller:Init()
     Constants = shared.Import "Constants"
     Event = shared.Import "Event"
+
+    Event:Listen("Reset", function(Player)
+        Player.Character:SetAttribute("Health", 0)
+    end)
 end
 
 function Controller.PlayerAdded(Player:Player)
@@ -11,6 +15,7 @@ function Controller.PlayerAdded(Player:Player)
 end
 
 function Controller.CharacterAdded(Character)
+    if Character:FindFirstChild("ControllerManager") then return end
     local Manager = Instance.new("ControllerManager")
     local GroundController = Instance.new("GroundController", Manager)
     local AirController = Instance.new("AirController", Manager)
@@ -18,7 +23,7 @@ function Controller.CharacterAdded(Character)
 
     local Humanoid = Character:WaitForChild("Humanoid")
     Manager.RootPart = Humanoid.RootPart
-    GroundController.GroundOffset = Humanoid.HipHeight
+    GroundController.GroundOffset = 2
     Manager.FacingDirection = Manager.RootPart.CFrame.LookVector
 
     local FloorSensor = Instance.new("ControllerPartSensor")

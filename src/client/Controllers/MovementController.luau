@@ -7,6 +7,8 @@ function Controller:Init()
 
     Workspace.Gravity = Constants.GRAVITY
 
+    Controller.Enabled = true
+
     Controller.Humanoid = nil
     Controller.Ground = nil
     Controller.JumpCount = 0
@@ -20,7 +22,7 @@ function Controller.CharacterAdded(Character)
     Controller.Manager = Character:WaitForChild("ControllerManager")
 
     Controller.Manager.ActiveController = Controller.Manager.GroundController
-    Controller.GroundSensor = Character.PrimaryPart.GroundSensor
+    Controller.GroundSensor = Character.HumanoidRootPart.GroundSensor
 
     Controller.JumpCount = 0
 end
@@ -42,10 +44,12 @@ function Controller:Jump()
     Controller.LastJump = tick()
 
     Controller.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    Controller.Character.PrimaryPart:ApplyImpulse(Vector3.new(0, Constants.JUMP, 0))
+    Controller.Character.HumanoidRootPart:ApplyImpulse(Vector3.new(0, Constants.JUMP, 0))
 end
 
 function Controller.Update()
+    if not Controller.Character then return end
+    if not Controller.Character:FindFirstChild("ControllerManager") then return end
     if not Controller.Humanoid then return end
 
     -- Get Data
@@ -65,6 +69,8 @@ function Controller.Update()
     end
 
     -- Apply movement
+    if not Controller.Enabled then return end
+
     Controller.Manager.MovingDirection = MoveDirection
     Controller.Manager.FacingDirection = MoveDirection
 

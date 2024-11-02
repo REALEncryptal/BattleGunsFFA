@@ -13,11 +13,12 @@ A free for all arcade gun game with a simple blocky style.
 	- Show animations
 	- Show skins
 	- Kill effects
-- Physics Character Controller (3/4)
+- Physics Character Controller ✅
 	- Low Gravity ✅
 	- Fast Movement ✅
 	- Double Jump ✅
-	- Ragdoll on death 
+	- Ragdoll on death ✅
+	- Custom health handler ✅
 - Player Data Save
 - Map Selection
 	- Display votes

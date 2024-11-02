@@ -16,5 +16,8 @@ return {
     TURN_SPEED = 10,
     ACCEL_TIME = 0.02,
     DECEL_TIME = 0.2,   
-    FRICTION_WEIGHT = 10
+    FRICTION_WEIGHT = 10,
+
+    -- HEALTH
+    HEALTH = 200,
 }
