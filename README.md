@@ -2,7 +2,7 @@
 A free for all arcade gun game with a simple blocky style.
 
 ###Goals:
-- Client Weapon System
+- Client Weapon System 
 	- Predictive Response
 	- Punchy Weapon Animations
 	- Skins
@@ -13,11 +13,11 @@ A free for all arcade gun game with a simple blocky style.
 	- Show animations
 	- Show skins
 	- Kill effects
-- Physics Character Controller
-	- Low Gravity
-	- Fast Movement
-	- Double Jump
-	- Ragdoll on death
+- Physics Character Controller (3/4)
+	- Low Gravity ✅
+	- Fast Movement ✅
+	- Double Jump ✅
+	- Ragdoll on death 
 - Player Data Save
 - Map Selection
 	- Display votes
