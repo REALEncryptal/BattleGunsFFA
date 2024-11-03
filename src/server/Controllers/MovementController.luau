@@ -22,7 +22,7 @@ function Controller.CharacterAdded(Character)
     local ClimbController = Instance.new("ClimbController", Manager)
 
     local Humanoid = Character:WaitForChild("Humanoid")
-    Manager.RootPart = Humanoid.RootPart
+    Manager.RootPart = Character:WaitForChild("HumanoidRootPart")
     GroundController.GroundOffset = 2
     Manager.FacingDirection = Manager.RootPart.CFrame.LookVector
 
@@ -56,6 +56,11 @@ function Controller.CharacterAdded(Character)
     GroundController.DecelerationTime = Constants.DECEL_TIME
     GroundController.FrictionWeight = Constants.FRICTION_WEIGHT
     GroundController.TurnSpeedFactor = Constants.TURN_SPEED
+    GroundController.BalanceRigidityEnabled = true
+    GroundController.BalanceMaxTorque = 1000000
+    GroundController.BalanceSpeed = 100
+
+    Manager.BaseTurnSpeed = 99999999
 
     -- Disable Humanoid state machine and physics
     Humanoid.EvaluateStateMachine = false

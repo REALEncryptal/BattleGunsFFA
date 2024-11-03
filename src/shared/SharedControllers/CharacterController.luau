@@ -13,6 +13,7 @@ function Controller:Init()
             Controller.PlayerAdded(Player)
         end
     end
+
 end
 
 function Controller.PlayerAdded(Player:Player)
@@ -22,6 +23,14 @@ function Controller.PlayerAdded(Player:Player)
 
     Player.CharacterAdded:Connect(function(Character)
         Controller._CharacterAdded(Character, Player)
+
+        if RunService:IsServer() then
+            for _, Accessory in pairs(Character:GetChildren()) do
+                if Accessory:IsA("Accessory") then
+                    Accessory:FindFirstChild("Handle").CanQuery = false
+                end
+            end
+        end
     end)
 end
 
@@ -77,6 +86,8 @@ end
 function Controller:IsCharacterMoving(Character): boolean
     local Humanoid = Character:FindFirstChildOfClass("Humanoid")
     local Root = Character:FindFirstChild("HumanoidRootPart")
+
+    if not Root then return false end
 
     local MoveDir = Humanoid.MoveDirection.Magnitude > 0
     local Vel = Root.AssemblyLinearVelocity.Magnitude > 0

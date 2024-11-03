@@ -2,15 +2,17 @@
 A free for all arcade gun game with a simple blocky style.
 
 ### Goals:
-- Client Weapon System (2/5)
+- Client Weapon System (3/5)
 	- Handle Death ✅
 	- Procedural Anims ✅
 	- Predictive Response
-	- Punchy Weapon Animations
-	- Skins
-- Server Weapon System
-	- Hit Validation
-	- Raycast
+	- Punchy Weapon Animations ✅
+	- Skins 
+- Server Weapon System (3/4)
+	- Hit Validation ✅
+	- Raycast ✅
+	- Sounds ✅
+	- Security 🟨
 - Character Visuals
 	- Show animations
 	- Show skins

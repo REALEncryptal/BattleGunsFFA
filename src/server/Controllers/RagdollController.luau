@@ -29,6 +29,7 @@ end
 
 function Controller.CharacterAdded(Character)
     CharacterController:GetSignals(Character).Died:Connect(function()
+        if not Character:FindFirstChild("ControllerManager") then return end
         Character:FindFirstChild("ControllerManager"):Destroy()
         Controller:Ragdoll(Character)
     end)

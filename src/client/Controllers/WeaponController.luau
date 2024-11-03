@@ -1,14 +1,16 @@
+local Debris = game:GetService("Debris")
 local Controller = {}
 
-local Event, WeaponObject, CharacterController
+local Event, RaycastWeapon, CharacterController
 function Controller:Init()
     Event = shared.Import "Event"
-    WeaponObject = shared.Import "WeaponObject"
+    RaycastWeapon = shared.Import "RaycastWeapon"
     CharacterController = shared.Import "CharacterController"
 
     Controller.Weapon = nil
 
     Event:Listen("SetWeapon", Controller.SetWeapon)
+    Event:Listen("PlaySound", Controller.PlaySound)
 
     CharacterController:OnCharacterAdded(game.Players.LocalPlayer):Connect(Controller._CharacterAdded)
 end
@@ -26,7 +28,24 @@ function Controller.SetWeapon(Weapon:Model)
         Controller.Weapon:Destroy()
     end
 
-    Controller.Weapon = WeaponObject.new(Weapon)
+    Controller.Weapon = RaycastWeapon.new(Weapon)
+end
+
+function Controller.PlaySound(Position: Vector3, Sound: Sound)
+    local SoundOrigin = Instance.new("Part")
+    SoundOrigin.Position = Position
+    SoundOrigin.Anchored = true
+    SoundOrigin.CanCollide = false
+    SoundOrigin.Size = Vector3.new(0.1, 0.1, 0.1)
+    SoundOrigin.Transparency = 1
+    SoundOrigin.Parent = workspace
+    SoundOrigin.CanQuery = false
+
+    local SoundInstance = Sound:Clone()
+    SoundInstance.Parent = SoundOrigin
+    SoundInstance:Play()
+
+    Debris:AddItem(SoundOrigin, SoundInstance.TimeLength)
 end
 
 function Controller.Update(DeltaTime)

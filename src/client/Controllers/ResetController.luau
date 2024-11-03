@@ -2,7 +2,6 @@ local Controller = {}
 
 local Event
 function Controller:Init()
-    print("ResetController Init")
     Event = shared.Import "Event"
     local ResetEvent = Instance.new("BindableEvent")
 

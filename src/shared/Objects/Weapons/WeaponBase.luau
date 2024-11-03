@@ -25,7 +25,7 @@ function WeaponObject.new(Weapon)
         Sway = Spring3.new(),
         Tilt = Spring3.new(), -- tilt when moving left/right
         Move = Spring3.new(), -- walk bob
-        Recoil = Spring3.new(),
+        Recoil = Spring3.new(6,50,2,7), -- golden values
         Impact = Spring3.new() -- when hitting the ground
     }
 
@@ -39,6 +39,12 @@ function WeaponObject.new(Weapon)
     self.Viewmodel.BodyColors.LeftArmColor3 = Description.LeftArmColor
     self.Viewmodel.BodyColors.RightArmColor3 = Description.RightArmColor
 
+    -- rig weapon
+    self:Rig()
+
+    -- load animations
+    self:LoadAnimations()
+
     return self
 end
 
@@ -47,8 +53,52 @@ function WeaponObject:Destroy()
     self.Enabled = false
 end
 
+function WeaponObject:Rig()
+    self.Weapon.Parent = self.Viewmodel
+
+    self.Weapon.PrimaryPart.CFrame = self.Viewmodel.PrimaryPart.CFrame
+
+    local Motor6D = Instance.new("Motor6D")
+    Motor6D.Name = "Weapon"
+    Motor6D.Part0 = self.Viewmodel.PrimaryPart
+    Motor6D.Part1 = self.Weapon.PrimaryPart
+    Motor6D.Parent = self.Viewmodel.PrimaryPart
+end
+
+function WeaponObject:LoadAnimations()
+    local Humanoid = self.Viewmodel:WaitForChild("Humanoid")
+    local Animator = Humanoid:WaitForChild("Animator")
+
+    self.Animations = {}
+
+    for Name, AnimationId in pairs(self.Config.Animations) do
+        local Animation = Instance.new("Animation")
+        Animation.AnimationId = AnimationId
+
+        local Track = Animator:LoadAnimation(Animation)
+
+        self.Animations[Name] = Track
+    end
+
+    self.Animations.Idle:Play()
+end
+
+function WeaponObject:FunctionalUpdate(DeltaTime)
+    -- implemented by children
+end
+
+function WeaponObject:FunctionalUpdateViewmodel(UpdatedSprings, DeltaTime): CFrame
+    return CFrame.new()
+end
+
+function WeaponObject:FunctionalUpdateCamera(UpdatedSprings, DeltaTime): CFrame
+    return CFrame.new()
+end
+
 function WeaponObject:Update(DeltaTime): boolean
+    self:FunctionalUpdate(DeltaTime)
     if not self.Enabled then return false end
+
     local Character = game.Players.LocalPlayer.Character
     local CameraCFrame = workspace.CurrentCamera.CFrame
     local MouseDelta = UserInputService:GetMouseDelta()
@@ -78,6 +128,15 @@ function WeaponObject:Update(DeltaTime): boolean
     elseif not self.Grounded then
         self.Springs.Move:Shove(Vector3.new(0,.1,0))
     end
+    
+    local TiltAmount = CameraCFrame:VectorToObjectSpace(Character.Humanoid.MoveDirection).Unit.X
+
+    -- fix nan
+    if TiltAmount ~= TiltAmount then
+        TiltAmount = 0
+    end
+
+    self.Springs.Tilt:Shove(Vector3.new(TiltAmount,TiltAmount*2,0))
 
     if self.Grounded and not WasGrounded and Character.HumanoidRootPart.AssemblyLinearVelocity.Y < -10 then
         self.Springs.Impact:Shove(Vector3.new(0,-1,0))
@@ -96,14 +155,22 @@ function WeaponObject:Update(DeltaTime): boolean
     end
 
     -- add springs
-    SpringFinal += UpdatedSprings.Sway + UpdatedSprings.Move + UpdatedSprings.Impact
+    SpringFinal += UpdatedSprings.Sway 
+        + UpdatedSprings.Move 
+        + UpdatedSprings.Impact
+        + UpdatedSprings.Tilt/20
 
     SpringFinal = CFrame.new(SpringFinal) 
         * CFrame.Angles(math.rad(UpdatedSprings.Sway.Y*-20), math.rad(UpdatedSprings.Sway.X*10), 0)
         * CFrame.Angles(math.rad(UpdatedSprings.Impact.Y*25), 0, 0)
+        * CFrame.Angles(0, 0, math.rad(UpdatedSprings.Tilt.X*-5))
+        * self:FunctionalUpdateViewmodel(UpdatedSprings, DeltaTime)
 
     -- set viewmodel pos
     self.Viewmodel.PrimaryPart.CFrame = CameraCFrame * SpringFinal * OffsetFinal
+
+    -- set camera pos
+    workspace.CurrentCamera.CFrame = CameraCFrame * self:FunctionalUpdateCamera(UpdatedSprings, DeltaTime)
 
     return true
 end
