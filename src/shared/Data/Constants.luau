@@ -5,14 +5,14 @@ return {
     DATASAVE = false, -- toggles player data load and save
 
     -- MOVEMENT
-    GRAVITY = 80,
+    GRAVITY = 70,
     SPEED = 20,
-    JUMP = 250,
+    JUMP = 350,
     AUTO_JUMP = false, -- bhop style
     JUMPS = 1, -- how many jumps can be done withtout touching the ground
     JUMP_DELAY = 0.4, -- how long to wait before allowing another jump
-    AIR_SPEED = 1.2, -- Modifier for air speed
-    AIR_FORCE = 300;
+    AIR_SPEED = 1.3, -- Modifier for air speed
+    AIR_FORCE = 500;
     TURN_SPEED = 10,
     ACCEL_TIME = 0.02,
     DECEL_TIME = 0.2,   

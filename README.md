@@ -1,8 +1,10 @@
 # Battle Guns FFA
 A free for all arcade gun game with a simple blocky style.
 
-###Goals:
-- Client Weapon System 
+### Goals:
+- Client Weapon System (2/5)
+	- Handle Death ✅
+	- Procedural Anims ✅
 	- Predictive Response
 	- Punchy Weapon Animations
 	- Skins

@@ -62,7 +62,6 @@ function Controller:CharacterDied(Character)
 end
 
 -- public
-
 function Controller:GetSignals(Character)
     return Controller.Characters[Character]
 end
@@ -73,6 +72,16 @@ function Controller:OnCharacterAdded(Player)
     until Controller.Players[Player]
 
     return Controller.Players[Player].CharacterAdded
+end
+
+function Controller:IsCharacterMoving(Character): boolean
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+
+    local MoveDir = Humanoid.MoveDirection.Magnitude > 0
+    local Vel = Root.AssemblyLinearVelocity.Magnitude > 0
+
+    return MoveDir and Vel
 end
 
 return Controller
