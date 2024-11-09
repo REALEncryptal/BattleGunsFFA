@@ -41,7 +41,6 @@ function Controller:BulletHit(Player, RaycastResult:RaycastResult, Weapon:Model)
 
     -- Damage
     local HitPart = RaycastResult.Instance
-
     local IsHeadShot = HitPart.Name == "Head"
 
     if HitPart.Parent:IsA("Model") then
@@ -60,7 +59,7 @@ function Controller.RaycastWeapon(Player:Player, Origin: Vector3, Direction: Vec
     -- Validate player
     local Character = Player.Character
     if not Character then return false end
-    
+
     local Health = Character:GetAttribute("Health")
     if not Health or Health <= 0 then return false end
 
@@ -76,7 +75,6 @@ function Controller.RaycastWeapon(Player:Player, Origin: Vector3, Direction: Vec
     Params.FilterType = Enum.RaycastFilterType.Exclude
 
     local RaycastResult = workspace:Raycast(Origin, Direction, Params)
-
     if RaycastResult then
         Controller:BulletHit(Player, RaycastResult, Weapon)
 

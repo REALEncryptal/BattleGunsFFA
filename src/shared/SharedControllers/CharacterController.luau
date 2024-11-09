@@ -3,10 +3,11 @@ Controller.Characters = {}
 Controller.Players = {}
 
 local RunService = game:GetService("RunService")
-local Signal
+local Signal, Constants
 
 function Controller:Init()
     Signal = shared.Import "Signal"
+    Constants = shared.Import "Constants"
 
     if RunService:IsClient() then
        for _, Player in pairs(game:GetService("Players"):GetPlayers()) do
@@ -42,15 +43,23 @@ function Controller._CharacterAdded(Character: Model, Player:Player)
 
     if RunService:IsServer() then
         Character:SetAttribute("Health", 100)
+        Instance.new("BoolValue", Character).Name = "BoolValue"
     end
+
+    Character:WaitForChild("BoolValue")
     
-    Character:GetAttributeChangedSignal("Health"):Connect(function()
+    local con con = Character:GetAttributeChangedSignal("Health"):Connect(function()
         Controller.Characters[Character].HealthChanged:Fire(Character:GetAttribute("Health"))
 
+        Character.Humanoid.Health = Character:GetAttribute("Health")
+
         if Character:GetAttribute("Health") <= 0 then
+            con:Disconnect()
+            Character:SetAttribute("Died", true)
             Controller:CharacterDied(Character)
         end
     end)
+
 
     -- finished
     Controller.Players[Player].CharacterAdded:Fire(Character)
@@ -63,7 +72,7 @@ function Controller:CharacterDied(Character)
 
     if not RunService:IsServer() then return end
 
-    task.wait(3)
+    task.wait(Constants.RESPAWN_TIME)
     local Player = game.Players:GetPlayerFromCharacter(Character)
     if not Player then return end
 

@@ -1,3 +1,5 @@
+local ContextActionService = game:GetService("ContextActionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 local UserInputService = game:GetService("UserInputService")
@@ -13,14 +15,36 @@ function RaycastWeapon.new(Weapon)
     self.OriginalWeapon = Weapon
 
     local Spring3 = shared.Import "Spring3"
-
+    
     self.WishFire = false
     self.LastDischarge = tick()
+    self.Bullets = self.Config.Bullets
+
+    self.Gui = Players.LocalPlayer.PlayerGui:WaitForChild("Game")
+
+    self.Animations.Reload.DidLoop:Connect(function()
+        self.Bullets = self.Config.Bullets
+    end)
+
+    ContextActionService:BindAction("Reload", function(Type)
+        if not Type == Enum.UserInputState.Begin then return end
+        self:Reload()
+    end, true, Enum.KeyCode.R)
 
     return self
 end
 
+function RaycastWeapon:Reload()
+    if self.Bullets == self.Config.Bullets then return end
+    if self.Animations.Reload.IsPlaying then return end
+
+    self.Animations.Reload:Play()
+end
+
 function RaycastWeapon:Fire()
+    if self.Bullets <= 0 then return end
+    self.Animations.Reload:Stop()
+    self.Bullets -= 1
     self.LastDischarge = tick()
 
     -- client raycast
@@ -33,7 +57,6 @@ function RaycastWeapon:Fire()
     local RaycastResult:RaycastResult = workspace:Raycast(Origin, Direction, Params)
 
     if RaycastResult then
-        Direction = RaycastResult.Position
         local DebugSurface = ReplicatedStorage.Assets.DebugSurface:Clone()
         DebugSurface.Position = RaycastResult.Position
         DebugSurface.CFrame = CFrame.new(RaycastResult.Position, RaycastResult.Normal + RaycastResult.Position)
@@ -50,10 +73,11 @@ function RaycastWeapon:Fire()
                 print("Server invalidated hit")
                 DebugSurface.CylinderHandleAdornment.Color3 = Color3.fromRGB(255,0,0)
             else
+                print("Server validated hit")
                 DebugSurface.CylinderHandleAdornment.Color3 = Color3.fromRGB(0,255,0)
 
-                if RaycastResult.Instance:IsA("Model") then
-                    local Health = RaycastResult.Instance:GetAttribute("Health")
+                if RaycastResult.Instance.Parent:IsA("Model") then
+                    local Health = RaycastResult.Instance.Parent:GetAttribute("Health")
 
                     if not Health then return end
                     SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker)
@@ -61,6 +85,8 @@ function RaycastWeapon:Fire()
                 
             end
         end)
+
+        Direction = RaycastResult.Position
     end
 
     shared.Import("RayEffect")(self.Weapon.PrimaryPart.Tip.WorldPosition, Direction)
@@ -73,10 +99,17 @@ end
 
 function RaycastWeapon:FunctionalUpdate(DeltaTime)
     if not self.Enabled then return end
+
+    self.Gui.Ammo.Text = self.Bullets .. "/" .. self.Config.Bullets
+
     if tick() - self.LastDischarge < 60 / self.Config.RPM then return end
 
     local WasWishFire = self.WishFire
     self.WishFire = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+
+    if not WasWishFire and self.WishFire and self.Bullets <= 0 then
+        SoundService:PlayLocalSound(ReplicatedStorage.Assets.Empty)
+    end
 
     if self.WishFire and self.Config.Automatic then
         self:Fire()

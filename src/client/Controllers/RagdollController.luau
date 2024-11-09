@@ -13,7 +13,6 @@ function Controller._CharacterAdded(Character)
     LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
 
     UserInputService.MouseIconEnabled = false
-
     CharacterController:GetSignals(Character).Died:Connect(function()
         LocalPlayer.CameraMode = Enum.CameraMode.Classic
         LocalPlayer.CameraMaxZoomDistance = 15
