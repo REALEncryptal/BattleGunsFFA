@@ -1,3 +1,4 @@
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Controller = {}
 
@@ -16,7 +17,14 @@ function Controller.PlayerAdded(Player: Player)
 end
 
 function Controller.CharacterAdded(Character, Player)
-    local Weapon = ReplicatedStorage.Assets.Weapons:FindFirstChild("M4A1")
+    local Weapons = ReplicatedStorage.Assets.Weapons:GetChildren()
+    local Weapon = Weapons[math.random(1, #Weapons)]
+
+    for _, Accessory:Accessory in pairs(Character:GetDescendants()) do
+        if not Accessory:IsA("Accessory") then continue end
+
+        CollectionService:AddTag(Accessory, "Accesory")
+    end
 
     Event:FireClient(Player, "SetWeapon", Weapon)
 end
@@ -31,31 +39,34 @@ function Controller:PlaySound(Position: Vector3, Sound: Sound, ExcludedPlayer:Pl
 end
 
 -- Bullet hit
-function Controller:BulletHit(Player, RaycastResult:RaycastResult, Weapon:Model)
-    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) then return end
+function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:Instance): boolean
+    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) then return false end
 
     local Config = require(Weapon:FindFirstChild("Configuration"))
 
-    -- sound
-    Controller:PlaySound(Player.Character.Head.Position, Weapon.Sounds.Shoot, Player)
+    -- Check distance
+    local Distance = (Position - Instance.Position).Magnitude
+    if Distance > 10 then return false end
 
     -- Damage
-    local HitPart = RaycastResult.Instance
-    local IsHeadShot = HitPart.Name == "Head"
+    local IsHeadShot = Instance.Name == "Head"
 
-    if HitPart.Parent:IsA("Model") then
-        HitPart = HitPart.Parent
-    end
+    Instance = Instance.Parent
 
-    local Health = HitPart:GetAttribute("Health")
+    local Health = Instance:GetAttribute("Health")
     if Health then
         Health -= Config.Damage * (IsHeadShot and Config.HeadshotMultiplier or 1)
-        HitPart:SetAttribute("Health", Health)
+        Instance:SetAttribute("Health", Health)
     end
+
+    return true
 end
 
 -- Shot validation
-function Controller.RaycastWeapon(Player:Player, Origin: Vector3, Direction: Vector3, Weapon:Model): boolean
+function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3, Instance: Instance): boolean
+    -- Validate weapon
+    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) then return end
+
     -- Validate player
     local Character = Player.Character
     if not Character then return false end
@@ -63,25 +74,24 @@ function Controller.RaycastWeapon(Player:Player, Origin: Vector3, Direction: Vec
     local Health = Character:GetAttribute("Health")
     if not Health or Health <= 0 then return false end
 
-    local PlayerHeadPosition = Character:WaitForChild("Head").Position
-    local Distance = (Origin - PlayerHeadPosition).Magnitude
-    if Distance > 15  then return false end
-
     --TODO: CHECK WEAPON STATS (Bullets, Damage, etc)
 
+    -- Play Sound
+    Controller:PlaySound(Player.Character.Head.Position, Weapon.Sounds.Shoot, Player)
+
     -- Raycast
-    local Params = RaycastParams.new()
-    Params.FilterDescendantsInstances = {Player.Character, workspace.Debug}
-    Params.FilterType = Enum.RaycastFilterType.Exclude
 
-    local RaycastResult = workspace:Raycast(Origin, Direction, Params)
-    if RaycastResult then
-        Controller:BulletHit(Player, RaycastResult, Weapon)
-
-        return true
+    -- Check humanoid
+    if Instance.Parent:IsA("Model") then
+        local Health = Instance.Parent:GetAttribute("Health") 
+        if Health then 
+            return Controller:BulletHit(Player, Weapon, Position, Instance)
+        end
     end
 
-    return false
+    -- TODO: CREATE BULLET HOLE
+
+    return true
 end
 
 return Controller

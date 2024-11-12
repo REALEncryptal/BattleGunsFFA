@@ -4,11 +4,11 @@ local Controller = {}
 local CharacterController
 function Controller:Init()
     CharacterController = shared.Import "CharacterController"
-
     CharacterController:OnCharacterAdded(game.Players.LocalPlayer):Connect(Controller._CharacterAdded)
 end
 
 function Controller._CharacterAdded(Character)
+    Controller.Loaded = true
     local LocalPlayer = game.Players.LocalPlayer
     LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
 
@@ -24,8 +24,8 @@ function Controller._CharacterAdded(Character)
 
         local Vel = (Root.AssemblyLinearVelocity * Vector3.new(1,0,1)).Unit
 
-        Root:ApplyImpulse(Vector3.new(5, 100, 0) + Vel * 100)
-        Root:ApplyAngularImpulse(Vector3.new(10, 300, 0))
+        Root:ApplyImpulse(Vector3.new(5, 100, 0) + Vel * 400)
+        Root:ApplyAngularImpulse(Vector3.new(10, 400, 0))
     end)
 end
 

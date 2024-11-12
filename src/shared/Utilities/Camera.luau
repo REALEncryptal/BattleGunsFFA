@@ -1,7 +1,26 @@
 local Util = {}
 
 local TweenService = game:GetService("TweenService")
-local Camera
+local Camera = game.Workspace.CurrentCamera
+
+local userInputService = game:GetService("UserInputService")
+local UserGameSettings = UserSettings():GetService("UserGameSettings")
+
+local SensModifier = 1
+
+local mouseDeltaSensitivity = SensModifier  / UserGameSettings.MouseSensitivity 
+userInputService.MouseDeltaSensitivity = mouseDeltaSensitivity
+
+UserGameSettings:GetPropertyChangedSignal("MouseSensitivity"):Connect(function()
+	mouseDeltaSensitivity = SensModifier  / UserGameSettings.MouseSensitivity 
+	userInputService.MouseDeltaSensitivity = mouseDeltaSensitivity
+end)
+
+function Util:SetSensitivityModifier(Mod)
+    SensModifier = Mod
+    mouseDeltaSensitivity = SensModifier  / UserGameSettings.MouseSensitivity 
+    userInputService.MouseDeltaSensitivity = mouseDeltaSensitivity
+end
 
 function Util:TweenFov(Fov, Time)
     Time = Time or 0.5

@@ -3,11 +3,12 @@ Controller.Characters = {}
 Controller.Players = {}
 
 local RunService = game:GetService("RunService")
-local Signal, Constants
+local Signal, Constants, Event
 
 function Controller:Init()
     Signal = shared.Import "Signal"
     Constants = shared.Import "Constants"
+    Event = shared.Import "Event"
 
     if RunService:IsClient() then
        for _, Player in pairs(game:GetService("Players"):GetPlayers()) do
@@ -33,6 +34,10 @@ function Controller.PlayerAdded(Player:Player)
             end
         end
     end)
+
+    if RunService:IsClient() then
+        Event:FireServer("Loaded")
+    end
 end
 
 function Controller._CharacterAdded(Character: Model, Player:Player)

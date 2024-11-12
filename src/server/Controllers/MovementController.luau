@@ -8,6 +8,12 @@ function Controller:Init()
     Event:Listen("Reset", function(Player)
         Player.Character:SetAttribute("Health", 0)
     end)
+
+    Event:Listen("Loaded", function(Player)
+        if Player:GetAttribute("Loaded") then return end
+        Player:SetAttribute("Loaded", true)
+        Player:LoadCharacter()
+    end)
 end
 
 function Controller.PlayerAdded(Player:Player)
@@ -45,7 +51,7 @@ function Controller.CharacterAdded(Character)
 
     -- Apply configs
     Manager.BaseMoveSpeed = Constants.SPEED
-    Manager.BaseTurnSpeed = 20
+    Manager.BaseTurnSpeed = 10
 
     AirController.MaintainLinearMomentum = true
     AirController.MaintainAngularMomentum = false
@@ -57,10 +63,8 @@ function Controller.CharacterAdded(Character)
     GroundController.FrictionWeight = Constants.FRICTION_WEIGHT
     GroundController.TurnSpeedFactor = Constants.TURN_SPEED
     GroundController.BalanceRigidityEnabled = true
-    GroundController.BalanceMaxTorque = 1000000
-    GroundController.BalanceSpeed = 100
 
-    Manager.BaseTurnSpeed = 99999999
+    Manager.BaseTurnSpeed = 10
 
     -- Disable Humanoid state machine and physics
     Humanoid.EvaluateStateMachine = false
