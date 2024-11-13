@@ -43,7 +43,6 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
     if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) then return false end
 
     local Config = require(Weapon:FindFirstChild("Configuration"))
-
     -- Check distance
     local Distance = (Position - Instance.Position).Magnitude
     if Distance > 10 then return false end
@@ -65,14 +64,17 @@ end
 -- Shot validation
 function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3, Instance: Instance): boolean
     -- Validate weapon
+    print(1)
     if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) then return end
-
+print(2)
     -- Validate player
     local Character = Player.Character
     if not Character then return false end
+    print(3)
 
     local Health = Character:GetAttribute("Health")
     if not Health or Health <= 0 then return false end
+    print(4 )
 
     --TODO: CHECK WEAPON STATS (Bullets, Damage, etc)
 

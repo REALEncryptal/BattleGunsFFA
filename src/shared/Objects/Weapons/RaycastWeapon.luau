@@ -37,7 +37,7 @@ function RaycastWeapon.new(Weapon)
 
     ContextActionService:BindAction("ADS", function(_, Type)
         self:ADS(Type == Enum.UserInputState.Begin)
-    end, true, Enum.UserInputType.MouseButton2)
+    end, true, Enum.KeyCode.LeftShift)
 
     self.Trove:Add(function()
         ContextActionService:UnbindAction("Reload")
@@ -46,7 +46,7 @@ function RaycastWeapon.new(Weapon)
         self:ADS(false)
         self.Animations.Reload:Stop()
         self.Animations.Fire:Stop()
-        
+
     end)
 
     return self
@@ -61,15 +61,7 @@ function RaycastWeapon:Reload()
     self.CooldownTween = shared.Import("InterfaceController"):TweenCooldown(self.Animations.Reload.Length)
 end
 
-function RaycastWeapon:BulletHit(RaycastResult)
-    if RaycastResult.Instance.Parent:IsA("Model") then
-        local Health = RaycastResult.Instance.Parent:GetAttribute("Health")
-
-        if Health then
-            return true
-        end
-    end
-
+function RaycastWeapon:BulletHit(RaycastResult): boolean
     local DebugSurface = ReplicatedStorage.Assets.DebugSurface:Clone()
     DebugSurface.Position = RaycastResult.Position
     DebugSurface.CFrame = CFrame.new(RaycastResult.Position, RaycastResult.Normal + RaycastResult.Position)
@@ -84,6 +76,14 @@ function RaycastWeapon:BulletHit(RaycastResult)
             DebugSurface.CylinderHandleAdornment.Color3 = Color3.fromRGB(0,255,0)
         end
     end)
+
+    if RaycastResult.Instance.Parent:IsA("Model") then
+        local Health = RaycastResult.Instance.Parent:GetAttribute("Health")
+
+        if Health then
+            return true
+        end
+    end
 end
 
 function RaycastWeapon:ADS(ADS:boolean)
@@ -154,7 +154,8 @@ function RaycastWeapon:Fire()
         local RaycastResult:RaycastResult = workspace:Raycast(Origin, SpreadDirection, Params)
 
         if RaycastResult then
-            HitCharacter = HitCharacter or self:BulletHit(RaycastResult)
+            local BulletHitCharacter = self:BulletHit(RaycastResult)
+            HitCharacter = HitCharacter or BulletHitCharacter
             Direction = RaycastResult.Position
         end
 
@@ -212,6 +213,8 @@ end
 
 function RaycastWeapon:FunctionalUpdateViewmodel(UpdatedSprings, DeltaTime): CFrame
     local Final = CFrame.new()
+
+    self.Gui.Crosshairs.Sniper.Center.Reticle.Position = UDim2.new(0.498 - UpdatedSprings.Sway.X/10, 0, 0.506 + UpdatedSprings.Sway.Y/10, 0)
 
     -- looks kinda goofy
     --Final *= CFrame.new(UpdatedSprings.Recoil)
