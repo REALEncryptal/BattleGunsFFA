@@ -95,6 +95,7 @@ function Controller:AnimateFrame(Frame, Triggers, KeyBind)
         if Controller.CurrentFrame == Frame then
             Controller.CurrentFrame = nil
             Frame.Visible = false
+            Controller.Gui.GameState.Visible = true
             Controller:ToggleMouse(false)
             Controller:PlayTweens(Controller.FrameCloseTweens)
         else
@@ -104,6 +105,7 @@ function Controller:AnimateFrame(Frame, Triggers, KeyBind)
 
             Controller.CurrentFrame = Frame
             Frame.Visible = true
+            Controller.Gui.GameState.Visible = false
             Controller:ToggleMouse(Frame.Visible)
             Controller:PlayTweens(Controller.FrameOpenTweens)
         end
@@ -119,6 +121,15 @@ function Controller:AnimateFrame(Frame, Triggers, KeyBind)
             end, false, KeyBind)
         end
     end
+end
+
+-- GAME STATE DISPLAY
+function Controller:SetupGameState()
+    
+end
+
+function Controller:ToggleGameState(Enabled:boolean)
+
 end
 
 -- MONEY DISPLAY
