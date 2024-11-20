@@ -24,12 +24,14 @@ function RaycastWeapon.new(Weapon)
     self.Gui = Players.LocalPlayer.PlayerGui:WaitForChild("Game")
 
     shared.Import("InterfaceController"):UseCrosshair(self.Config.Crosshair)  
+    shared.Import("InterfaceController"):SetSpread(self.Config.Spread)
 
     self.Animations.Reload.DidLoop:Connect(function()
         self.Bullets = self.Config.Bullets
         shared.Import("InterfaceController"):TweenAmmoUi()
     end)
 
+    -- TODO: MOBILE SUPPORT
     ContextActionService:BindAction("Reload", function(_, Type)
         if not Type == Enum.UserInputState.Begin then return end
         self:Reload()
@@ -37,7 +39,11 @@ function RaycastWeapon.new(Weapon)
 
     ContextActionService:BindAction("ADS", function(_, Type)
         self:ADS(Type == Enum.UserInputState.Begin)
-    end, true, Enum.KeyCode.LeftShift)
+    end, true, Enum.UserInputType.MouseButton2)
+
+    ContextActionService:BindAction("Fire", function(_, Type)
+        self.IsFirePressed = Type == Enum.UserInputState.Begin
+    end, true, Enum.UserInputType.MouseButton1)
 
     self.Trove:Add(function()
         ContextActionService:UnbindAction("Reload")
@@ -46,7 +52,6 @@ function RaycastWeapon.new(Weapon)
         self:ADS(false)
         self.Animations.Reload:Stop()
         self.Animations.Fire:Stop()
-
     end)
 
     return self
@@ -62,14 +67,21 @@ function RaycastWeapon:Reload()
 end
 
 function RaycastWeapon:BulletHit(RaycastResult): boolean
-    local DebugSurface = ReplicatedStorage.Assets.DebugSurface:Clone()
-    DebugSurface.Position = RaycastResult.Position
-    DebugSurface.CFrame = CFrame.new(RaycastResult.Position, RaycastResult.Normal + RaycastResult.Position)
-    DebugSurface.Parent = workspace.Debug
+    local Debug =  shared.Import("Constants").DEBUG
+    local DebugSurface
+    if Debug then
+        DebugSurface = ReplicatedStorage.Assets.DebugSurface:Clone()
+        DebugSurface.Position = RaycastResult.Position
+        DebugSurface.CFrame = CFrame.new(RaycastResult.Position, RaycastResult.Normal + RaycastResult.Position)
+        DebugSurface.Parent = workspace.Debug
+    end
+    
 
     -- Validate hit
     task.spawn(function()
-        local Valid = shared.Import("Event"):InvokeServer("RaycastWeapon", self.OriginalWeapon, RaycastResult.Position, RaycastResult.Instance)
+        local Valid = shared.Import("Event"):InvokeServer("RaycastWeapon", self.OriginalWeapon, RaycastResult.Position, RaycastResult.Instance, RaycastResult.Normal)
+
+        if not Debug then return end
         if not Valid then
             DebugSurface.CylinderHandleAdornment.Color3 = Color3.fromRGB(255,0,0)
         else
@@ -81,7 +93,7 @@ function RaycastWeapon:BulletHit(RaycastResult): boolean
         local Health = RaycastResult.Instance.Parent:GetAttribute("Health")
 
         if Health then
-            return true
+            return RaycastResult.Instance
         end
     end
 end
@@ -94,14 +106,16 @@ function RaycastWeapon:ADS(ADS:boolean)
 
     if ADS then
         CameraUtil:SetSensitivityModifier(.5)
-        self.Offsets.Hide = CFrame.new(0,-110,0)
+        self.Offsets.Hide = CFrame.new(0,-100,0)
         InterfaceController:UseCrosshair(self.Config.CrosshairADS)
         CameraUtil:TweenFov(self.Config.FovADS, .1)
+        InterfaceController.Enabled = false
     else
         CameraUtil:SetSensitivityModifier(1)
         self.Offsets.Hide = CFrame.new(0,0,0)
         InterfaceController:UseCrosshair(self.Config.Crosshair)
         CameraUtil:TweenFov(shared.Import("Constants").DEFAULT_FOV, .2)
+        InterfaceController.Enabled = true
     end
 
     self.IsADS = ADS
@@ -121,7 +135,14 @@ function RaycastWeapon:Fire()
 
     -- client raycast
     local Params = RaycastParams.new()
-    Params.FilterDescendantsInstances = {self.Viewmodel, game.Players.LocalPlayer.Character, workspace.Debug, unpack(CollectionService:GetTagged("Accessory"))}
+    Params.FilterDescendantsInstances = {
+        self.Viewmodel, 
+        game.Players.LocalPlayer.Character, 
+        workspace.Debug, 
+        workspace.Ignore, 
+        unpack(CollectionService:GetTagged("Accessory")), 
+        unpack(CollectionService:GetTagged("Ignore"))
+    }
     Params.RespectCanCollide = false
     Params.FilterType = Enum.RaycastFilterType.Exclude
 
@@ -159,15 +180,29 @@ function RaycastWeapon:Fire()
             Direction = RaycastResult.Position
         end
 
-        shared.Import("RayEffect")(self.Weapon.PrimaryPart.Tip.WorldPosition, Direction)
+        local OriginEffect = self.Weapon.PrimaryPart.Tip.WorldPosition
+
+        if self.IsADS then
+            OriginEffect = workspace.CurrentCamera.CFrame.Position - Vector3.new(0,3,0)
+        end
+
+        shared.Import("RayEffect")[self.Config.RayEffect or "Default"](OriginEffect, Direction)
     end
 
-    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and shared.Import("Constants").DEBUG then
         workspace.Debug:ClearAllChildren()
     end
 
     if HitCharacter then
-        SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker)
+        shared.Import("InterfaceController"):Hitmarker()
+        task.spawn(function()
+            task.wait(.05)
+            if HitCharacter.Name == "Head" then
+                SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker1)
+            else
+                SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker)
+            end
+        end)
     end
 
     -- Effects
@@ -198,7 +233,7 @@ function RaycastWeapon:FunctionalUpdate(DeltaTime)
     if tick() - self.LastDischarge < 60 / self.Config.RPM then return end
 
     local WasWishFire = self.WishFire
-    self.WishFire = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+    self.WishFire = self.IsFirePressed
 
     if not WasWishFire and self.WishFire and self.Bullets <= 0 then
         SoundService:PlayLocalSound(ReplicatedStorage.Assets.Empty)

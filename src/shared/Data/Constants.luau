@@ -1,7 +1,7 @@
 return {
     -- PLACE
     VERSION = 1,
-    DEBUG = true,
+    DEBUG = false,
     DATASAVE = false, -- toggles player data load and save
 
     -- CAMERA
@@ -24,4 +24,7 @@ return {
     -- CHARACTER
     HEALTH = 100,
     RESPAWN_TIME = 3,
+
+    -- GAMEPASSES
+    
 }

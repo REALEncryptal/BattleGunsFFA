@@ -12,13 +12,13 @@ A free for all arcade gun game with a simple blocky style.
 	- Automatics ✅
 	- Projectiles
 	- Skins 
-- Server Weapon System (3/4)
+- Server Weapon System 
 	- Hit Validation ✅
 	- Raycast ✅
 	- Sounds ✅
 	- Security 🟨 
 - Character Visuals
-	- Show animations
+	- Show animations ✅
 	- Show skins
 	- Kill effects
 - Physics Character Controller ✅
@@ -33,9 +33,10 @@ A free for all arcade gun game with a simple blocky style.
 - Game Loop
 	- Timed Matches
 - Monitization
+	- Shop UI ✅
 	- Purchasable Skin Crates
 	- Purchasable Kill effects
-	- Select any weapon on spawn
+	- Select any weapon on spawn ✅
 	- Purchase Currency
 	- Purchasable Events
 		- Raining Bombs

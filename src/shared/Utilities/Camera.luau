@@ -31,4 +31,10 @@ function Util:TweenFov(Fov, Time)
     Tween:Play()
 end
 
+function Util:KilledBy(Player:Player)
+    local KillerCharacter = Player.Character
+    workspace.CurrentCamera.CameraType = Enum.CameraType.Watch
+    workspace.CurrentCamera.CameraSubject = KillerCharacter:FindFirstChildOfClass("Humanoid")
+end
+
 return Util

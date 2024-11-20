@@ -1,9 +1,10 @@
 local UserInputService = game:GetService("UserInputService")
 local Controller = {}
 
-local CharacterController
+local CharacterController, CameraUtil
 function Controller:Init()
     CharacterController = shared.Import "CharacterController"
+    CameraUtil = shared.Import "Camera"
     CharacterController:OnCharacterAdded(game.Players.LocalPlayer):Connect(Controller._CharacterAdded)
 end
 
