@@ -37,7 +37,7 @@ A free for all arcade gun game with a simple blocky style.
 	- Purchasable Skin Crates
 	- Purchasable Kill effects
 	- Select any weapon on spawn ✅
-	- Purchase Currency
+	- Purchase Currency 🟨 
 	- Purchasable Events
 		- Raining Bombs
 		- Big Heads

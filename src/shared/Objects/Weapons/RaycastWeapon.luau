@@ -39,7 +39,7 @@ function RaycastWeapon.new(Weapon)
 
     ContextActionService:BindAction("ADS", function(_, Type)
         self:ADS(Type == Enum.UserInputState.Begin)
-    end, true, Enum.UserInputType.MouseButton2)
+    end, true, Enum.UserInputType.MouseButton2, Enum.KeyCode.LeftShift)
 
     ContextActionService:BindAction("Fire", function(_, Type)
         self.IsFirePressed = Type == Enum.UserInputState.Begin

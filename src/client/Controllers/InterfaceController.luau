@@ -10,10 +10,11 @@ function Controller:PreInit()
     Controller.Gui = game.Players.LocalPlayer.PlayerGui:WaitForChild("Game")
 end
 
-local Event, MonetizationController
+local Event, MonetizationController, NumberFormat
 function Controller:Init()
     Event = shared.Import "Event"
     MonetizationController = shared.Import "MonetizationController"
+    NumberFormat = shared.Import "NumberFormat"
 
     Controller.SpreadAngle = 0
     Controller.Crosshair = nil
@@ -28,6 +29,7 @@ function Controller:Init()
     Controller:SetupAnimations()
     Controller:SetupShopFrame()
     Controller:SetupGunsFrame()
+    Controller:SetupMoney()
 end
 
 -- Animate
@@ -119,6 +121,23 @@ function Controller:AnimateFrame(Frame, Triggers, KeyBind)
     end
 end
 
+-- MONEY DISPLAY
+function Controller:SetupMoney()
+    local Data = game.Players.LocalPlayer:WaitForChild("Data")
+    
+    Controller:UpdateMoney(Data)
+
+    Data.AttributeChanged:Connect(function()
+        Controller:UpdateMoney(Data)
+    end)
+end
+
+function Controller:UpdateMoney(Data)
+    local MoneyFrame = Controller.Gui.LeftBar.Money.Money
+    local Amount = Data:GetAttribute("Money")
+
+    MoneyFrame.Amount.Text = NumberFormat(Amount)
+end
 
 -- SHOP FRAME
 function Controller:SetupShopFrame()

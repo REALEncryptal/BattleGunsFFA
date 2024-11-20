@@ -4,6 +4,23 @@ return {
     DEBUG = false,
     DATASAVE = false, -- toggles player data load and save
 
+    -- PROFILE
+    PROFILE_TEMPLATE = {
+        Money = 0,
+        Kills = 0,
+        
+        Equipped = {
+            Skin = "Default",
+            KillEffect = "Default"
+        },
+        Skins = {
+            Default=true
+        },
+        KillEffects = {
+            Default=true
+        }
+    },
+
     -- CAMERA
     DEFAULT_FOV = 70,
 
