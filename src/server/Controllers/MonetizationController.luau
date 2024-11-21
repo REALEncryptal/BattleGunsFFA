@@ -21,6 +21,20 @@ function Controller.PromptPurchaseFinished(Player:Player, AssetID, WasPurchased:
     end
 end
 
+function Controller.PlayerAdded(Player)
+    -- Check if player owns any products and run the PlayerJoined function
+    for _, Product in pairs(ProductData) do
+        if Product.Type ~= Enum.InfoType.GamePass then return end
+        local Success, IsOwned = pcall(function()
+            return MarketplaceService:UserOwnsGamePassAsync(Player.UserId, Product.AssetID)
+        end)
+
+        if Success and IsOwned then
+            Product.PlayerJoined(Player)
+        end
+    end
+end
+
 -- Methods
 function Controller:GetProductData(Name)
     if not ProductData[Name] then

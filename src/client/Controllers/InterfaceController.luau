@@ -10,11 +10,13 @@ function Controller:PreInit()
     Controller.Gui = game.Players.LocalPlayer.PlayerGui:WaitForChild("Game")
 end
 
-local Event, MonetizationController, NumberFormat
+local Event, MonetizationController, NumberFormat, UiScale
 function Controller:Init()
     Event = shared.Import "Event"
     MonetizationController = shared.Import "MonetizationController"
     NumberFormat = shared.Import "NumberFormat"
+    UiScale = shared.Import "UiScale"
+
 
     Controller.SpreadAngle = 0
     Controller.Crosshair = nil
@@ -30,6 +32,55 @@ function Controller:Init()
     Controller:SetupShopFrame()
     Controller:SetupGunsFrame()
     Controller:SetupMoney()
+    Controller:SetupUiScale()
+end
+
+-- Ui Scale
+function Controller:SetupUiScale()
+    Controller.FrameSizes = {}
+
+    -- save the original sizes
+    for FrameName, _ in pairs(UiScale) do
+        local Frame = Controller.Gui.Frames:FindFirstChild(FrameName) or Controller.Gui:FindFirstChild(FrameName)
+        if not Frame then continue end
+
+        Controller.FrameSizes[FrameName] = Frame.Size
+    end
+
+    -- update current scale
+    Controller:UpdateScale()
+
+    -- listen for window resizes
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+        Controller:UpdateScale()
+    end)
+end
+
+function Controller:UpdateScale()
+    for FrameName, ScaleData in pairs(UiScale) do
+        local Frame = Controller.Gui.Frames:FindFirstChild(FrameName) or Controller.Gui:FindFirstChild(FrameName)
+        if not Frame then continue end
+
+        Controller:ScaleFrame(Frame, ScaleData)
+    end
+end
+
+function Controller:ScaleFrame(Frame:Frame, ScaleData)
+    local ViewportSize = workspace.CurrentCamera.ViewportSize.X
+
+    local LastSize = ScaleData[1].Scale
+    local LastName = ScaleData[1].MaxWidth
+    -- find the size that fits
+    for _, Data in ipairs(ScaleData) do
+        if ViewportSize > Data.MaxWidth then
+            LastSize = Data.Scale
+            LastName = Data.MaxWidth
+        end
+    end
+
+    -- scale the ui according
+    local FrameSize = Controller.FrameSizes[Frame.Name]
+    Frame.Size = UDim2.new(LastSize[1] * FrameSize.X.Scale, 0, LastSize[2] * FrameSize.Y.Scale, 0)
 end
 
 -- Animate

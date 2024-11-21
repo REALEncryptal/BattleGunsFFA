@@ -35,7 +35,11 @@ function Controller:PromptPurchase(Name)
         return
     end
 
-    MarketplaceService:PromptPurchase(LocalPlayer, Product.AssetID)
+    if Product.Type == Enum.InfoType.GamePass then
+        MarketplaceService:PromptGamePassPurchase(LocalPlayer, Product.AssetID)
+    else
+        MarketplaceService:PromptProductPurchase(LocalPlayer, Product.AssetID)
+    end
 end
 
 return Controller
