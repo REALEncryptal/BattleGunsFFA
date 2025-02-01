@@ -48,7 +48,6 @@ function Controller.CharacterAdded(Character, Player)
 
         local Killer = game.Players:GetPlayerByUserId(Character:GetAttribute("LastHitBy"))
         Event:FireClient(Killer, "Kill", Player)
-        print(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"))
         KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"), Character, Killer, Character.PrimaryPart.CFrame)
     end)
 end

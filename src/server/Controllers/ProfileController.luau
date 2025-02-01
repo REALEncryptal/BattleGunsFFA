@@ -43,7 +43,8 @@ function Controller.PlayerAdded(player)
         profile:ListenToRelease(function()
             Controller.Profiles[player] = nil
             -- The profile could've been loaded on another Roblox server:
-            print("Profile for", player, "released")
+
+            Constants:Debug("[ProfileController] Player profile released: ", player)
             player:Kick()
         end)
         if player:IsDescendantOf(Players) == true then
@@ -69,7 +70,7 @@ end
 -- Data Interface
 function Controller:FolderToData(Directory)
     if not Directory then 
-        warn("Data did not load in")
+        Constants:Debug("[ProfileController] FolderToData: Directory is nil: ", Directory)
         return
     end
     local Data = Directory:GetAttributes()

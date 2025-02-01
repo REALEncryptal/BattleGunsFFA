@@ -57,7 +57,17 @@ function RaycastWeapon.new(Weapon)
     return self
 end
 
+function RaycastWeapon:Toggle(Enabled)
+    
+
+    if self.Viewmodel and not self.Destroyed then
+        self.Viewmodel.Parent = Enabled and workspace.CurrentCamera or ReplicatedStorage
+    end
+    shared.Import("InterfaceController"):ToggleWeapons(Enabled)
+end
+
 function RaycastWeapon:Reload()
+    if not self.Enabled then return end
     if self.Bullets == self.Config.Bullets then return end
     if self.Animations.Reload.IsPlaying then return end
 
@@ -105,6 +115,7 @@ function RaycastWeapon:ADS(ADS:boolean)
     local CameraUtil = shared.Import("Camera")
 
     if ADS then
+        if not self.Enabled then return end
         CameraUtil:SetSensitivityModifier(.5)
         self.Offsets.Hide = CFrame.new(0,-100,0)
         InterfaceController:UseCrosshair(self.Config.CrosshairADS)
@@ -122,6 +133,7 @@ function RaycastWeapon:ADS(ADS:boolean)
 end
 
 function RaycastWeapon:Fire()
+    if not self.Enabled then return end
     if self.Bullets <= 0 then return end
     self.Animations.Reload:Stop()
     if self.CooldownTween then

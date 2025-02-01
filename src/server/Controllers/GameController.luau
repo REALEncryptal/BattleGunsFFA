@@ -32,26 +32,20 @@ function Controller:Init()
 
     -- Events
     --TODO: Allow players to change their votes
-    Event:Listen("Vote", function(Player, Map:Model)
+    Event:Listen("Vote", function(Player, MapName)
         if not Controller.IsVoting then 
-            if Constants.DEBUG then
-                print("[GameController] Vote rejected - voting is not active")
-            end
+            Constants:Debug("[GameController] Vote rejected - voting is not active")
             return 
         end
         
-        local Votes = Players:GetAttribute("Votes")
+        local Votes = Player:GetAttribute("Votes")
         if Votes <= 0 then 
-            if Constants.DEBUG then
-                print("[GameController] Vote rejected - player has no votes left")
-            end
+            Constants:Debug("[GameController] Vote rejected - player has no votes left")
             return 
         end
         
-        if not table.find(Controller.RandomMaps, Map) then 
-            if Constants.DEBUG then
-                print("[GameController] Vote rejected - invalid map")
-            end
+        if not table.find(Controller.RandomMaps, MapName) then 
+            Constants:Debug("[GameController] Vote rejected - invalid map")
             return 
         end
 
@@ -59,22 +53,20 @@ function Controller:Init()
         Player:SetAttribute("Votes", Votes - 1)
 
         -- Store vote
-        Controller.Votes[Map] = Controller.Votes[Map] or {}
+        Controller.Votes[MapName] = Controller.Votes[MapName] or {}
 
         -- Insert
-        table.insert(Controller.Votes[Map], Player)
+        table.insert(Controller.Votes[MapName], Player)
 
         -- Alert players
-        Event:FireAllClients("Vote", Player, Map)
-        
-        if Constants.DEBUG then
-            print("[GameController] Vote recorded for", Map, "by", Player.Name)
-        end
+        Event:FireAllClients("Vote", Player, MapName)
+
+        Constants:Debug("[GameController] Vote recorded for", MapName, "by", Player.Name)
     end)
 
     Event:Listen("GameState", function(Player)
         -- Return current game state info
-        if Controller.StateMachine.CurrentState == "MapVote" then
+        if Controller.StateMachine.CurrentStateName == "MapVote" then
             return {
                 State = "MapVote",
                 Maps = Controller.RandomMaps,
@@ -84,7 +76,7 @@ function Controller:Init()
         end
 
         return {
-            State = Controller.StateMachine.CurrentState,
+            State = Controller.StateMachine.CurrentStateName,
             StartTime = Controller.GameInitialTick
         }
     end)
@@ -92,9 +84,9 @@ end
 
 -- Events
 function Controller.PlayerAdded(Player)
-    local Data = Player:WaitForChild("Data")
+    local Data = Player:FindFirstChild("Data")
 
-    Player:SetAttribute("Votes", Data:GetAttribute("Votes"))
+    Player:SetAttribute("Votes", if Data then Data:GetAttribute("Votes") else 1)
 end
 
 function Controller.Update(Delta)
@@ -112,11 +104,16 @@ Controller.States.Initial = {
 -- After map has been selected
 Controller.States.GameLoop = {
     Start = function(Map)
+        print("Starting game loop with map", Map.Name)
         Controller.Map = Map:Clone()
 
         Controller.Map.Parent = workspace.Map
         Controller.GameInitialTick = tick()
         Event:FireAllClients("GameState", Controller.GameInitialTick)
+
+        for _, Player:Player in ipairs(Players:GetPlayers()) do
+            Player:LoadCharacter()
+        end
     end,
     Update = function(delta)
         if tick() - Controller.GameInitialTick >= Constants.ROUND_TIME then
@@ -137,8 +134,12 @@ Controller.States.MapVote = {
     end,
     Update = function()
         if tick() - Controller.VoteStart >= Constants.VOTE_TIME then
-            Controller.StateMachine:SetState("GameLoop", Controller:GetVotedMap())
+            local Map = ReplicatedStorage.Assets.Maps:FindFirstChild(Controller:GetVotedMap())
+            Controller.StateMachine:SetState("GameLoop", Map)
         end
+    end,
+    End = function()
+        Event:FireAllClients("MapVoteEnd")
     end
 }
 
@@ -153,7 +154,7 @@ function Controller:StartMapVote()
         local RandomMap = Maps[math.random(1, #Maps)]
 
         -- add and remove
-        table.insert(Controller.RandomMaps, RandomMap)
+        table.insert(Controller.RandomMaps, RandomMap.Name)
         table.remove(Maps, table.find(Maps, RandomMap)) -- prevent the same map from being selected
     end
 
@@ -165,13 +166,13 @@ function Controller:StartMapVote()
     Controller.IsVoting = true
 end
 
-function Controller:GetVotedMap():Model    
+function Controller:GetVotedMap()    
     -- Disable voting
     Controller.IsVoting = false
 
     -- allow players to vote again
     for _, Player in ipairs(Players:GetPlayers()) do
-        Player:SetAttribute("Votes", Player:WaitForChild("Data"):GetAttribute("Votes"))
+        Player:SetAttribute("Votes", Player:FindFirstChild("Data"):GetAttribute("Votes") or 1)
     end
 
     -- find the map with the most votes
@@ -187,15 +188,11 @@ function Controller:GetVotedMap():Model
     
     -- If no votes were cast, return a random map from the voting pool
     if not VotedMap then
-        if Constants.DEBUG then
-            print("[GameController] No votes cast, selecting random map from voting pool")
-        end
+        Constants:Debug("[GameController] No votes cast, selecting random map from voting pool")
         VotedMap = Controller.RandomMaps[math.random(1, #Controller.RandomMaps)]
     end
     
-    if Constants.DEBUG then
-        print("[GameController] Voted map is", VotedMap, "with", maxVotes, "votes")
-    end
+    Constants:Debug("[GameController] Voted map is", VotedMap, "with", maxVotes, "votes")
 
     return VotedMap
 end

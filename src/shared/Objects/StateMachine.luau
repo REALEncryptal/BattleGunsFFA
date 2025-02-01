@@ -13,6 +13,7 @@ function FSM.new()
 
     self.States = {}
     self.CurrentState = nil
+    self.CurrentStateName = nil
     self.Enabled = true
     self.Debug = shared.Import("Constants").DEBUG
 
@@ -40,6 +41,7 @@ function FSM:SetState(StateName, ...)
 
     if self.Debug then print("[FSM] Starting state", StateName) end
     self.CurrentState = self.States[StateName] 
+    self.CurrentStateName = StateName
     self.States[StateName].Start(...)
 end
 

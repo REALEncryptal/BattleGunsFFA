@@ -11,13 +11,14 @@ function Controller:PreInit()
     Controller.Gui = game.Players.LocalPlayer.PlayerGui:WaitForChild("Game")
 end
 
-local Event, MonetizationController, NumberFormat, UiScale, Constants
+local Event, MonetizationController, NumberFormat, UiScale, Constants, WeaponController
 function Controller:Init()
     Event = shared.Import "Event"
     MonetizationController = shared.Import "MonetizationController"
     NumberFormat = shared.Import "NumberFormat"
     UiScale = shared.Import "UiScale"
     Constants = shared.Import "Constants"
+    WeaponController = shared.Import "WeaponController"
 
     Controller.SpreadAngle = 0
     Controller.Crosshair = nil
@@ -184,7 +185,7 @@ end
 
 -- GAME STATE DISPLAY
 function Controller:SetupGameState()
-    
+    -- TODO: Implement
 end
 
 function Controller:ToggleGameState(Enabled:boolean)
@@ -220,18 +221,26 @@ function Controller:SetupVoteScreen() -- screens are just frames that cover the 
         Controller:StartVote(RandomMaps)
     end)
 
+    -- Listen for map vote end
+    Event:Listen("MapVoteEnd", function()
+        Controller:EndVote()
+    end)
+
     -- Listen for vote updates
     Event:Listen("Vote", function()
-        if not Controller.Voting then return end
+        if not Controller.Voting then
+            Constants:Debug("[InterfaceController] Vote update received while not voting")
+            return
+        end
 
         local GameState = Event:InvokeServer("GameState")
-        for MapModel, MapEntry in pairs(Frame.Vote.Maps:GetChildren()) do
-            if not MapEntry:IsA("Frame") then continue end
 
-            Controller:UpdateVoteEntry(MapModel, MapEntry, GameState)
+        for MapName, _ in pairs(GameState.Votes) do
+            Controller:UpdateVoteEntry(MapName, Controller.MapEntries[MapName], GameState)
         end
     end)
 end
+
 
 function Controller:StartVote(RandomMaps)
     local Frame:Frame = Controller.Gui.Screens:WaitForChild("Vote")
@@ -244,8 +253,10 @@ function Controller:StartVote(RandomMaps)
     -- TODO: Disable weapons
     Controller:ToggleMouse(true)
     Controller:ToggleCrosshair(false)
+    WeaponController:Toggle(false)
 
     -- Show screen
+    -- TODO: Animate
     Frame.Visible = true
 
     -- firing squad
@@ -256,27 +267,59 @@ function Controller:StartVote(RandomMaps)
     end
    
     -- populate
-    local MapEntries = {}
+    Controller.MapEntries = {}
 
-    for _, MapModel:Model in ipairs(RandomMaps) do
+    for _, MapName in ipairs(RandomMaps) do
+        local MapModel = ReplicatedStorage.Assets.Maps:FindFirstChild(MapName)
 
         -- create intial visuals
         local MapEntry = ReplicatedStorage.Assets.Interface.MapEntry:Clone()
-        MapEntry.MapEntry.MapName.Text = MapModel.Configuration:GetAttribute("DisplayName") or MapModel.Name
+        MapEntry.MapEntry.MapName.Text = MapModel.Configuration:GetAttribute("DisplayName") or MapName
+
+        if Constants.Debug then
+            MapEntry.MapEntry.MapName.Text = MapEntry.MapEntry.MapName.Text .. " (" .. MapName .. ")"
+        end
+
         MapEntry.MapEntry.MapImage.Image = "rbxassetid://" .. MapModel.Configuration:GetAttribute("DisplayImage")
         MapEntry.Parent = Frame.Vote.Maps
 
         -- store frame
-        MapEntries[MapModel] = MapEntry
+        Controller.MapEntries[MapName] = MapEntry
 
         -- display any existing votes
-        --Controller:UpdateVoteEntry(MapModel, MapEntry, InitialGameState)
+        Controller:UpdateVoteEntry(MapName, MapEntry, InitialGameState)
+
+        -- listen to trigger
+        Controller:TweenButton(MapEntry.MapEntry, MapEntry.Trigger)
+
+        MapEntry.Trigger.Activated:Connect(function()
+            Event:InvokeServer("Vote", MapName)
+        end)
     end
 end
 
-function Controller:UpdateVoteEntry(MapModel:Model, MapEntry:Frame, InitialGameState)
-    local Votes = InitialGameState.Votes[MapModel]
-    assert(Votes, "[InterfaceController] : UpdateVoteEntry > No votes found for map " .. MapModel.Name)
+function Controller:EndVote()
+    local Frame:Frame = Controller.Gui.Screens:WaitForChild("Vote")
+
+    -- Update state
+    Controller.Voting = false
+
+    -- TODO: Enable weapons
+    Controller:ToggleMouse(false)
+    Controller:ToggleCrosshair(true)
+    WeaponController:Toggle(true)
+
+    -- hide screen
+    -- TODO: Animate
+    Frame.Visible = false
+end
+
+function Controller:UpdateVoteEntry(MapName, MapEntry:Frame, InitialGameState)
+    local Votes = InitialGameState.Votes[MapName]
+    if not Votes then
+        Constants:Debug("[InterfaceController] No votes for map", MapName)
+        return
+    end
 
     -- Clear any existing votes
     for _, Vote in ipairs(MapEntry.MapEntry.Votes:GetChildren()) do
@@ -290,7 +333,7 @@ function Controller:UpdateVoteEntry(MapModel:Model, MapEntry:Frame, InitialGameS
     for i, Player:Player in pairs(Votes) do
         local UserVote = ReplicatedStorage.Assets.Interface.UserVote:Clone()
         UserVote.Image = Players:GetUserThumbnailAsync(Player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-        UserVote.Priority = i + 1
+        UserVote.LayoutOrder = i + 1
         UserVote.Parent = MapEntry.MapEntry.Votes
 
         -- Prioritize local player
@@ -495,6 +538,11 @@ function Controller:UseCrosshair(CrosshairName)
 
     Controller.Crosshair = Controller.Gui:WaitForChild("Crosshairs"):FindFirstChild(CrosshairName)
     Controller.Crosshair.Visible = true
+end
+
+function Controller:ToggleWeapons(Enabled)
+    Controller.Crosshair.Visible = Enabled
+    Controller.Gui.WeaponInfo.Visible = Enabled
 end
 
 function Controller:ToggleCrosshair(State:boolean)

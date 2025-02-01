@@ -10,7 +10,6 @@ function Controller:Init()
 end
 
 function Controller.KillEffect(KillEffect:ModuleScript, Character:Model, Killer:Player, CFrameBeforeDeath: CFrame)
-    print(KillEffect, Character, Killer, CFrameBeforeDeath)
     local RunFunction = require(KillEffect)
 
     SoundService:PlayLocalSound(ReplicatedStorage.Assets.Kill)

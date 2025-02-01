@@ -1,12 +1,13 @@
 local Debris = game:GetService("Debris")
 local Controller = {}
 
-local Event, RaycastWeapon, CharacterController, Camera
+local Event, RaycastWeapon, CharacterController, Camera, Constants
 function Controller:Init()
     Event = shared.Import "Event"
     RaycastWeapon = shared.Import "RaycastWeapon"
     CharacterController = shared.Import "CharacterController"
     Camera = shared.Import "Camera"
+    Constants = shared.Import "Constants"
 
     Controller.WeaponTypes = {
         RaycastWeapon =  shared.Import "RaycastWeapon",
@@ -14,6 +15,7 @@ function Controller:Init()
     }
 
     Controller.Weapon = nil
+    Controller.Enabled = true
 
     Event:Listen("SetWeapon", Controller.SetWeapon)
     Event:Listen("PlaySound", Controller.PlaySound)
@@ -45,14 +47,24 @@ function Controller.SetWeapon(Weapon:Model)
     local Config = require(Weapon.Configuration)
 
     if not Controller.WeaponTypes[Config.Type] then
-        warn("Invalid weapon type or missing type")
+        Constants:Debug("Invalid weapon type or missing type")
         return
     end
 
     Controller.Weapon = Controller.WeaponTypes[Config.Type].new(Weapon)
+
+    Controller:Toggle(Controller.Enabled)
 end
 
-function Controller.F(Position: Vector3, Sound: Sound)
+function Controller:Toggle(Enabled)
+    Controller.Enabled = Enabled
+
+    if Controller.Weapon then
+        Controller.Weapon:Toggle(Enabled)
+    end
+end
+
+function Controller.PlaySound(Position: Vector3, Sound: Sound)
     local SoundOrigin = Instance.new("Part")
     SoundOrigin.Position = Position
     SoundOrigin.Anchored = true

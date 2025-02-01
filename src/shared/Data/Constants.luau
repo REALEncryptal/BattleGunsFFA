@@ -1,4 +1,4 @@
-return {
+local Constants = {
     -- PLACE
     VERSION = 1,
     DEBUG = true,
@@ -6,7 +6,7 @@ return {
 
     -- MAPS
     VOTE_TIME = 5,
-    ROUND_TIME = 5,
+    ROUND_TIME = 15,
 
     -- PROFILE
     PROFILE_TEMPLATE = {
@@ -51,3 +51,10 @@ return {
     -- GAMEPASSES
     
 }
+
+function Constants:Debug(...)
+    if not Constants.DEBUG then return end
+    print(...)
+end
+
+return Constants

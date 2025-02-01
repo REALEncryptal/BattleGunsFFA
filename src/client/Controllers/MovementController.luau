@@ -22,7 +22,7 @@ function Controller.CharacterAdded(Character)
     Controller.Manager = Character:WaitForChild("ControllerManager")
 
     Controller.Manager.ActiveController = Controller.Manager.GroundController
-    Controller.GroundSensor = Character.HumanoidRootPart.GroundSensor
+    Controller.GroundSensor = Character:WaitForChild("HumanoidRootPart").GroundSensor
 
     Controller.JumpCount = 0
 end

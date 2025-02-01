@@ -10,6 +10,7 @@ function WeaponObject.new(Weapon)
     local Spring3 = shared.Import "Spring3"
 
     self.Enabled = true
+    self.Destroyed = false
 
     self.Trove = shared.Import("Trove").new()
 
@@ -51,6 +52,7 @@ end
 function WeaponObject:Destroy()
     self.Trove:Destroy()
     self.Enabled = false
+    self.Destroyed = true
 end
 
 function WeaponObject:Rig()
@@ -97,9 +99,14 @@ end
 
 function WeaponObject:Update(DeltaTime): boolean
     self:FunctionalUpdate(DeltaTime)
-    if not self.Enabled then return false end
+    if not self.Enabled or self.Destroyed then return false end
 
     local Character = game.Players.LocalPlayer.Character
+
+    if not Character then return end
+    if not Character:FindFirstChild("HumanoidRootPart") then return end
+    -- brother is gone 🙏😭
+
     local CameraCFrame = workspace.CurrentCamera.CFrame
     local MouseDelta = UserInputService:GetMouseDelta()
     local SpringFinal = Vector3.new()

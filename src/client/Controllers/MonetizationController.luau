@@ -2,14 +2,15 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Controller = {}
 
-local ProductData
+local ProductData, Constants
 function Controller:Init()
     ProductData = shared.Import "ProductData"
+    Constants = shared.Import "Constants"
 end
 
 function Controller:GetProductData(Name)
     if not ProductData[Name] then
-        warn("Product not found")
+        Constants:Debug("[MonetizationController] Product not found: " .. Name)
         return
     end
 
@@ -20,7 +21,7 @@ function Controller:GetProductInfo(Name)
     local Product = ProductData[Name]
 
     if not Product then
-        warn("Product not found")
+        Constants:Debug("[MonetizationController] Product not found: " .. Name)
         return
     end
 
@@ -31,7 +32,7 @@ function Controller:PromptPurchase(Name)
     local Product = ProductData[Name]
 
     if not Product then
-        warn("Product not found")
+        Constants:Debug("[MonetizationController] Product not found: " .. Name)
         return
     end
 
