@@ -104,7 +104,6 @@ Controller.States.Initial = {
 -- After map has been selected
 Controller.States.GameLoop = {
     Start = function(Map)
-        print("Starting game loop with map", Map.Name)
         Controller.Map = Map:Clone()
 
         Controller.Map.Parent = workspace.Map

@@ -67,6 +67,8 @@ end
 
 -- Shot validation
 function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3, Instance: Instance, Normal:Vector3): boolean
+    if not Instance then return false end
+
     -- Validate weapon
     if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) then return false end
 
@@ -85,10 +87,12 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
     -- Raycast
 
     -- Check humanoid
-    if Instance.Parent:IsA("Model") then
-        local Health = Instance.Parent:GetAttribute("Health") 
-        if Health then 
-            return Controller:BulletHit(Player, Weapon, Position, Instance)
+    if Instance.Parent then
+        if Instance.Parent:IsA("Model") then
+            local Health = Instance.Parent:GetAttribute("Health") 
+            if Health then 
+                return Controller:BulletHit(Player, Weapon, Position, Instance)
+            end
         end
     end
 

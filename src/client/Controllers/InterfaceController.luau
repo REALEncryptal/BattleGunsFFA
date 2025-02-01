@@ -254,6 +254,7 @@ function Controller:StartVote(RandomMaps)
     Controller:ToggleMouse(true)
     Controller:ToggleCrosshair(false)
     WeaponController:Toggle(false)
+    WeaponController:Destroy()
 
     -- Show screen
     -- TODO: Animate

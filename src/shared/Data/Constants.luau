@@ -1,7 +1,7 @@
 local Constants = {
     -- PLACE
     VERSION = 1,
-    DEBUG = true,
+    DEBUG = false,
     DATASAVE = false, -- toggles player data load and save 
 
     -- MAPS

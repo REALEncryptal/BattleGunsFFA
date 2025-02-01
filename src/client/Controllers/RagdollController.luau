@@ -1,10 +1,12 @@
 local UserInputService = game:GetService("UserInputService")
 local Controller = {}
 
-local CharacterController, CameraUtil
+local CharacterController, CameraUtil, WeaponController
 function Controller:Init()
     CharacterController = shared.Import "CharacterController"
     CameraUtil = shared.Import "Camera"
+    WeaponController = shared.Import "WeaponController"
+
     CharacterController:OnCharacterAdded(game.Players.LocalPlayer):Connect(Controller._CharacterAdded)
 end
 
@@ -13,7 +15,7 @@ function Controller._CharacterAdded(Character)
     local LocalPlayer = game.Players.LocalPlayer
     LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
 
-    UserInputService.MouseIconEnabled = false
+    UserInputService.MouseIconEnabled = if WeaponController.Enabled then false else true
     CharacterController:GetSignals(Character).Died:Connect(function()
         LocalPlayer.CameraMode = Enum.CameraMode.Classic
         LocalPlayer.CameraMaxZoomDistance = 15

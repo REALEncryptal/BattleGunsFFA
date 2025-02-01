@@ -53,7 +53,12 @@ function Controller.SetWeapon(Weapon:Model)
 
     Controller.Weapon = Controller.WeaponTypes[Config.Type].new(Weapon)
 
-    Controller:Toggle(Controller.Enabled)
+    Controller.Weapon:Toggle(Controller.Enabled)
+end
+
+function Controller:Destroy()
+    if not Controller.Weapon then return end
+    Controller.Weapon:Destroy()
 end
 
 function Controller:Toggle(Enabled)

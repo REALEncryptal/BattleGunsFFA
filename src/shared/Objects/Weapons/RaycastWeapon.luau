@@ -58,8 +58,8 @@ function RaycastWeapon.new(Weapon)
 end
 
 function RaycastWeapon:Toggle(Enabled)
+    self.Enabled = Enabled
     
-
     if self.Viewmodel and not self.Destroyed then
         self.Viewmodel.Parent = Enabled and workspace.CurrentCamera or ReplicatedStorage
     end
@@ -109,6 +109,7 @@ function RaycastWeapon:BulletHit(RaycastResult): boolean
 end
 
 function RaycastWeapon:ADS(ADS:boolean)
+    if self.Destroyed then return end
     if not self.Config.ADS then return end
 
     local InterfaceController = shared.Import("InterfaceController")
@@ -133,6 +134,7 @@ function RaycastWeapon:ADS(ADS:boolean)
 end
 
 function RaycastWeapon:Fire()
+    if self.Destroyed then return end
     if not self.Enabled then return end
     if self.Bullets <= 0 then return end
     self.Animations.Reload:Stop()
@@ -240,6 +242,7 @@ end
 
 function RaycastWeapon:FunctionalUpdate(DeltaTime)
     if not self.Enabled then return end
+    if self.Destroyed then return end
 
     self:UpdateUi(DeltaTime)
 
