@@ -32,6 +32,7 @@ A free for all arcade gun game with a simple blocky style.
 	- Display votes
 - Game Loop
 	- Timed Matches
+	- Maps
 - Monitization
 	- Shop UI ✅
 	- Purchasable Skin Crates

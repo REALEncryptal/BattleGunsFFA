@@ -3,11 +3,12 @@ local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Controller = {}
 
-local Constants, Event, CharacterController
+local Constants, Event, CharacterController, KillEffectController
 function Controller:Init()
     Constants = shared.Import "Constants"
     Event = shared.Import "Event"
     CharacterController = shared.Import "CharacterController"
+    KillEffectController = shared.Import "KillEffectController"
 
     Event:Listen("RaycastWeapon", Controller.RaycastWeapon)
     Event:Listen("SelectWeapon", Controller.SelectWeapon)
@@ -46,8 +47,9 @@ function Controller.CharacterAdded(Character, Player)
         if not Character:GetAttribute("LastHitBy") then return end
 
         local Killer = game.Players:GetPlayerByUserId(Character:GetAttribute("LastHitBy"))
-
         Event:FireClient(Killer, "Kill", Player)
+        print(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"))
+        KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"), Character, Killer, Character.PrimaryPart.CFrame)
     end)
 end
 
@@ -103,6 +105,18 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
 end
 
 -- Weapon equip
+function Controller:RecursiveTag(Instance, ObjectType, Tag)
+    if Instance:IsA(ObjectType) then
+        CollectionService:AddTag(Instance, Tag)
+    end
+    for _, child in Instance:GetChildren() do
+        Controller:RecursiveTag(child, ObjectType, Tag)
+    end
+    Instance.ChildAdded:Connect(function(child)
+        Controller:RecursiveTag(child, ObjectType, Tag)
+    end)
+end
+
 function Controller:EquipWeapon(Player, Weapon)
     Event:FireClient(Player, "SetWeapon", Weapon)
 
@@ -119,6 +133,9 @@ function Controller:EquipWeapon(Player, Weapon)
     Motor6D.Part1 = WeaponModel:WaitForChild("Handle")
 
     Motor6D.Parent = Character:FindFirstChild("Right Arm")
+
+    -- Create tags for raycasting
+    Controller:RecursiveTag(WeaponModel, "BasePart", "Weapon")
 
     -- Load Animation
     local Animation = Instance.new("Animation")

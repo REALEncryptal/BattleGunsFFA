@@ -24,7 +24,7 @@ function WeaponObject.new(Weapon)
     self.Springs = {
         Sway = Spring3.new(),
         Tilt = Spring3.new(), -- tilt when moving left/right
-        Move = Spring3.new(), -- walk bob
+        Move = Spring3.new(5,50,6,6), -- walk bob  mass force damping speed
         Recoil = Spring3.new(6,50,2,7), -- golden values
         Impact = Spring3.new() -- when hitting the ground
     }
@@ -115,16 +115,12 @@ function WeaponObject:Update(DeltaTime): boolean
 
     if Moving and self.Grounded then
         self.Springs.Move:Shove(Vector3.new(
-            math.sin(tick()*7.5)*.1,
-            math.cos(tick()*7.5*2)*.07  ,
+            math.cos(tick()*7)*.15,
+            math.sin(tick()*7*2)*.12-.2,
             0
         ))
     elseif Moving and not self.Grounded then
-        self.Springs.Move:Shove(Vector3.new(
-            math.sin(tick()*2.5)*.05,
-            math.cos(tick()*5)*.05 + 0.1,
-            0
-        ))
+        self.Springs.Move:Shove(Vector3.new())
     elseif not self.Grounded then
         self.Springs.Move:Shove(Vector3.new(0,.1,0))
     end

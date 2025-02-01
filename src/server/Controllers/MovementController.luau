@@ -34,7 +34,7 @@ function Controller.CharacterAdded(Character)
 
     local FloorSensor = Instance.new("ControllerPartSensor")
     FloorSensor.SensorMode = Enum.SensorMode.Floor
-    FloorSensor.SearchDistance = GroundController.GroundOffset + 0.5
+    FloorSensor.SearchDistance = GroundController.GroundOffset + 0.35
     FloorSensor.Name = "GroundSensor"
 
     local LadderSensor = Instance.new("ControllerPartSensor")
@@ -68,6 +68,11 @@ function Controller.CharacterAdded(Character)
 
     -- Disable Humanoid state machine and physics
     Humanoid.EvaluateStateMachine = false
+
+    -- fix density : number,friction : number,elasticity : number,frictionWeight : number,elasticityWeight : number)
+    local ColliderMaterial = PhysicalProperties.new(.7, 0, 0, 100, 100)
+    Character.Head.CustomPhysicalProperties = ColliderMaterial
+    Character.Torso.CustomPhysicalProperties = ColliderMaterial
 end
 
 return Controller

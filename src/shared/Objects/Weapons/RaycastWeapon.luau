@@ -141,7 +141,8 @@ function RaycastWeapon:Fire()
         workspace.Debug, 
         workspace.Ignore, 
         unpack(CollectionService:GetTagged("Accessory")), 
-        unpack(CollectionService:GetTagged("Ignore"))
+        unpack(CollectionService:GetTagged("Ignore")),
+        unpack(CollectionService:GetTagged("Weapon"))
     }
     Params.RespectCanCollide = false
     Params.FilterType = Enum.RaycastFilterType.Exclude

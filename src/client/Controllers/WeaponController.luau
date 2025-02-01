@@ -52,7 +52,7 @@ function Controller.SetWeapon(Weapon:Model)
     Controller.Weapon = Controller.WeaponTypes[Config.Type].new(Weapon)
 end
 
-function Controller.PlaySound(Position: Vector3, Sound: Sound)
+function Controller.F(Position: Vector3, Sound: Sound)
     local SoundOrigin = Instance.new("Part")
     SoundOrigin.Position = Position
     SoundOrigin.Anchored = true

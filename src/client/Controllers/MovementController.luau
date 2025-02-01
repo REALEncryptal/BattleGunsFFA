@@ -39,6 +39,7 @@ function Controller:Jump()
     if Controller.JumpCount >= Constants.JUMPS then return end
     if tick() - Controller.LastJump < Constants.JUMP_DELAY then return end
     if Constants.AUTO_JUMP and Controller.JumpCount > 0 then return end
+    if not Controller.Ground then return end -- temporary fix for air jumping TODO: FIX THIS AIR JUMP BUG
 
     Controller.JumpCount += 1
     Controller.LastJump = tick()

@@ -3,20 +3,21 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
 local Controller = {}
 
 function Controller:PreInit()
     Controller.Gui = game.Players.LocalPlayer.PlayerGui:WaitForChild("Game")
 end
 
-local Event, MonetizationController, NumberFormat, UiScale
+local Event, MonetizationController, NumberFormat, UiScale, Constants
 function Controller:Init()
     Event = shared.Import "Event"
     MonetizationController = shared.Import "MonetizationController"
     NumberFormat = shared.Import "NumberFormat"
     UiScale = shared.Import "UiScale"
-
+    Constants = shared.Import "Constants"
 
     Controller.SpreadAngle = 0
     Controller.Crosshair = nil
@@ -29,10 +30,17 @@ function Controller:Init()
 
     -- Setup Frames
     Controller:SetupAnimations()
+    Controller:SetupVoteScreen()
     Controller:SetupShopFrame()
     Controller:SetupGunsFrame()
     Controller:SetupMoney()
     Controller:SetupUiScale()
+
+    -- Check if we joined during a map vote
+    local GameState = Event:InvokeServer("GameState")
+    if GameState.State == "MapVote" then
+        Controller:StartVote(GameState.Maps, GameState.StartTime)
+    end
 end
 
 -- Ui Scale
@@ -201,6 +209,97 @@ function Controller:UpdateMoney(Data)
     MoneyFrame.Amount.Text = NumberFormat(Amount)
 end
 
+-- VOTE SCREEN
+function Controller:SetupVoteScreen() -- screens are just frames that cover the whole screen and should hide the gamestate
+    local Frame:Frame = Controller.Gui.Screens:WaitForChild("Vote")
+
+    Controller.Voting = false
+    
+    -- Listen for map vote start
+    Event:Listen("MapVote", function(RandomMaps)
+        Controller:StartVote(RandomMaps)
+    end)
+
+    -- Listen for vote updates
+    Event:Listen("Vote", function()
+        if not Controller.Voting then return end
+
+        local GameState = Event:InvokeServer("GameState")
+        for MapModel, MapEntry in pairs(Frame.Vote.Maps:GetChildren()) do
+            if not MapEntry:IsA("Frame") then continue end
+
+            Controller:UpdateVoteEntry(MapModel, MapEntry, GameState)
+        end
+    end)
+end
+
+function Controller:StartVote(RandomMaps)
+    local Frame:Frame = Controller.Gui.Screens:WaitForChild("Vote")
+    local InitialGameState = Event:InvokeServer("GameState")
+
+    -- Update state
+    Controller.Voting = true
+
+    -- Enable input from player
+    -- TODO: Disable weapons
+    Controller:ToggleMouse(true)
+    Controller:ToggleCrosshair(false)
+
+    -- Show screen
+    Frame.Visible = true
+
+    -- firing squad
+    for _, MapEntry in ipairs(Frame.Vote.Maps:GetChildren()) do
+        if not MapEntry:IsA("Frame") then continue end
+
+        MapEntry:Destroy()
+    end
+   
+    -- populate
+    local MapEntries = {}
+
+    for _, MapModel:Model in ipairs(RandomMaps) do
+
+        -- create intial visuals
+        local MapEntry = ReplicatedStorage.Assets.Interface.MapEntry:Clone()
+        MapEntry.MapEntry.MapName.Text = MapModel.Configuration:GetAttribute("DisplayName") or MapModel.Name
+        MapEntry.MapEntry.MapImage.Image = "rbxassetid://" .. MapModel.Configuration:GetAttribute("DisplayImage")
+        MapEntry.Parent = Frame.Vote.Maps
+
+        -- store frame
+        MapEntries[MapModel] = MapEntry
+
+        -- display any existing votes
+        --Controller:UpdateVoteEntry(MapModel, MapEntry, InitialGameState)
+    end
+end
+
+function Controller:UpdateVoteEntry(MapModel:Model, MapEntry:Frame, InitialGameState)
+    local Votes = InitialGameState.Votes[MapModel]
+    assert(Votes, "[InterfaceController] : UpdateVoteEntry > No votes found for map " .. MapModel.Name)
+
+    -- Clear any existing votes
+    for _, Vote in ipairs(MapEntry.MapEntry.Votes:GetChildren()) do
+        if not Vote:IsA("Frame") then continue end
+
+        Vote:Destroy()
+    end
+
+    -- Populate
+    --TODO: Cache the uservote image
+    for i, Player:Player in pairs(Votes) do
+        local UserVote = ReplicatedStorage.Assets.Interface.UserVote:Clone()
+        UserVote.Image = Players:GetUserThumbnailAsync(Player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+        UserVote.Priority = i + 1
+        UserVote.Parent = MapEntry.MapEntry.Votes
+
+        -- Prioritize local player
+        if Player == Players.LocalPlayer then
+            UserVote.LayoutOrder = 0
+        end
+    end
+end
+
 -- SHOP FRAME
 function Controller:SetupShopFrame()
     local Frame:Frame = Controller.Gui.Frames:WaitForChild("Shop")
@@ -365,14 +464,21 @@ end
 
 
 -- Misc
-function Controller:KillResult(Player:Player)
+function Controller:KillResult(Player:Player | Model) -- Player or NPC
     Controller.Gui.KillResult.Text = "You killed " .. Player.Name
 
-    Controller.KillResultTween = Controller.KillResultTween or TweenService:Create(Controller.Gui.KillResult, TweenInfo.new(2, Enum.EasingStyle.Quad), {TextTransparency = 1})
-    Controller.KillResultTweenStroke = Controller.KillResultTweenStroke or TweenService:Create(Controller.Gui.KillResult.UiStroke, TweenInfo.new(2, Enum.EasingStyle.Quad), {Transparency = 1})
+    -- Tween the text
+    Controller.KillResultTween = Controller.KillResultTween or TweenService:Create(Controller.Gui.KillResult, TweenInfo.new(3, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {TextTransparency = 1})
+    Controller.KillResultTweenStroke = Controller.KillResultTweenStroke or TweenService:Create(Controller.Gui.KillResult.UIStroke, TweenInfo.new(3, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {Transparency = 1})
     Controller.Gui.KillResult.TextTransparency = 0
-    Controller.Gui.KillResult.UiStroke.Transparency = 0
+    Controller.Gui.KillResult.UIStroke.Transparency = 0
     Controller.KillResultTween:Play()
+    Controller.KillResultTweenStroke:Play()
+
+    -- Tween kill effect
+    Controller.KillVignetteTween = Controller.KillVignetteTween or TweenService:Create(Controller.Gui.WhiteVignette, TweenInfo.new(.3, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {ImageTransparency = 1})
+    Controller.Gui.WhiteVignette.ImageTransparency = 0
+    Controller.KillVignetteTween:Play()
 end
 
 function Controller:Hitmarker()
@@ -389,6 +495,10 @@ function Controller:UseCrosshair(CrosshairName)
 
     Controller.Crosshair = Controller.Gui:WaitForChild("Crosshairs"):FindFirstChild(CrosshairName)
     Controller.Crosshair.Visible = true
+end
+
+function Controller:ToggleCrosshair(State:boolean)
+    Controller.Crosshair.Visible = State
 end
 
 function Controller:SetSpread(Spread)
