@@ -40,8 +40,19 @@ function Controller:Init()
         
         local Votes = Player:GetAttribute("Votes")
         if Votes <= 0 then 
-            Constants:Debug("[GameController] Vote rejected - player has no votes left")
-            return 
+            Constants:Debug("[GameController] Changing votes")
+
+            -- remove the player from the previous vote
+            for Map, Players in pairs(Controller.Votes) do
+                local Index = table.find(Players, Player)
+                if not Index then continue end
+
+                table.remove(Controller.Votes[Map], Index)
+                print("Removed", Player.Name, "from", Map)
+            end
+
+            -- add a vote
+            Player:SetAttribute("Votes", 1)
         end
         
         if not table.find(Controller.RandomMaps, MapName) then 

@@ -201,7 +201,10 @@ function RaycastWeapon:Fire()
             OriginEffect = workspace.CurrentCamera.CFrame.Position - Vector3.new(0,3,0)
         end
 
-        shared.Import("RayEffect")[self.Config.RayEffect or "Default"](OriginEffect, Direction)
+        task.spawn(function()
+            shared.Import("ImpactEffect")(RaycastResult)
+            shared.Import("RayEffect")[self.Config.RayEffect or "Default"](OriginEffect, Direction)
+        end)
     end
 
     if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and shared.Import("Constants").DEBUG then

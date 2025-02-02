@@ -273,7 +273,7 @@ function Controller:SetupVoteScreen() -- screens are just frames that cover the 
 
         local GameState = Event:InvokeServer("GameState")
 
-        for MapName, _ in pairs(GameState.Votes) do
+        for _, MapName in ipairs(Controller.MapPool) do
             Controller:UpdateVoteEntry(MapName, Controller.MapEntries[MapName], GameState)
         end
     end)
@@ -281,6 +281,7 @@ end
 
 
 function Controller:StartVote(RandomMaps)
+    Controller.MapPool = RandomMaps
     local Frame:Frame = Controller.Gui.Screens:WaitForChild("Vote")
     local InitialGameState = Event:InvokeServer("GameState")
 
@@ -315,7 +316,7 @@ function Controller:StartVote(RandomMaps)
         local MapEntry = ReplicatedStorage.Assets.Interface.MapEntry:Clone()
         MapEntry.MapEntry.MapName.Text = MapModel.Configuration:GetAttribute("DisplayName") or MapName
 
-        if Constants.Debug then
+        if Constants.DEBUG then
             MapEntry.MapEntry.MapName.Text = MapEntry.MapEntry.MapName.Text .. " (" .. MapName .. ")"
         end
 
@@ -355,21 +356,21 @@ end
 
 function Controller:UpdateVoteEntry(MapName, MapEntry:Frame, InitialGameState)
     local Votes = InitialGameState.Votes[MapName]
-    if not Votes then
-        Constants:Debug("[InterfaceController] No votes for map", MapName)
-        return
-    end
 
     -- Clear any existing votes
     for _, Vote in ipairs(MapEntry.MapEntry.Votes:GetChildren()) do
-        if not Vote:IsA("Frame") then continue end
+        if not Vote:IsA("ImageLabel") then continue end
 
         Vote:Destroy()
     end
 
+    if not Votes then
+        return
+    end
+
     -- Populate
     --TODO: Cache the uservote image
-    for i, Player:Player in pairs(Votes) do
+    for i, Player:Player in ipairs(Votes) do
         local UserVote = ReplicatedStorage.Assets.Interface.UserVote:Clone()
         UserVote.Image = Players:GetUserThumbnailAsync(Player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
         UserVote.LayoutOrder = i + 1
@@ -377,6 +378,7 @@ function Controller:UpdateVoteEntry(MapName, MapEntry:Frame, InitialGameState)
 
         -- Prioritize local player
         if Player == Players.LocalPlayer then
+            UserVote.UIStroke.Enabled = true
             UserVote.LayoutOrder = 0
         end
     end

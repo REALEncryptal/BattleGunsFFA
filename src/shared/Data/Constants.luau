@@ -1,12 +1,12 @@
 local Constants = {
     -- PLACE
     VERSION = 1,
-    DEBUG = false,
+    DEBUG = true,
     DATASAVE = false, -- toggles player data load and save 
 
     -- MAPS
-    VOTE_TIME = 5,
-    ROUND_TIME = 5,
+    VOTE_TIME = 30,
+    ROUND_TIME = 1,
 
     -- PROFILE
     PROFILE_TEMPLATE = {
@@ -26,6 +26,9 @@ local Constants = {
             Default=true
         }
     },
+
+    -- REWARDS
+    KILL_REWARD = 10,
 
     -- CAMERA
     DEFAULT_FOV = 80,

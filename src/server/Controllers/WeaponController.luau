@@ -47,6 +47,13 @@ function Controller.CharacterAdded(Character, Player)
         if not Character:GetAttribute("LastHitBy") then return end
 
         local Killer = game.Players:GetPlayerByUserId(Character:GetAttribute("LastHitBy"))
+
+        -- award killer
+        if Killer then
+            Killer.Data:SetAttribute("Kills", Killer.Data:GetAttribute("Kills") + 1)
+        end
+
+        -- effects
         Event:FireClient(Killer, "Kill", Player)
         KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"), Character, Killer, Character.PrimaryPart.CFrame)
     end)
