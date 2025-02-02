@@ -6,7 +6,7 @@ local Constants = {
 
     -- MAPS
     VOTE_TIME = 5,
-    ROUND_TIME = 15,
+    ROUND_TIME = 5,
 
     -- PROFILE
     PROFILE_TEMPLATE = {

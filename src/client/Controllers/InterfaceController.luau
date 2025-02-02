@@ -22,6 +22,7 @@ function Controller:Init()
 
     Controller.SpreadAngle = 0
     Controller.Crosshair = nil
+    Controller.StartTime = 0
     Controller.CurrentFrame = nil
     Controller.Enabled = true
 
@@ -36,6 +37,7 @@ function Controller:Init()
     Controller:SetupGunsFrame()
     Controller:SetupMoney()
     Controller:SetupUiScale()
+    Controller:SetupGameState()
 
     -- Check if we joined during a map vote
     local GameState = Event:InvokeServer("GameState")
@@ -185,7 +187,43 @@ end
 
 -- GAME STATE DISPLAY
 function Controller:SetupGameState()
-    -- TODO: Implement
+    Event:Listen("GameState", function(GameState)
+        Controller:UpdateGameState(GameState)
+    end)
+
+    Controller:UpdateGameState(Event:InvokeServer("GameState"))
+end
+
+function Controller:UpdateGameState(State)
+    local Frame = Controller.Gui.GameState
+    local StateLabel = Frame.Main.Main.State
+
+    local StateName = State.State
+    local StartTime = State.StartTime
+
+    local NameMap = {
+        GameLoop = "FFA",
+        MapVote = "Map Vote",
+    }
+
+    local ConstantsMap = {
+        GameLoop = "ROUND",
+        MapVote = "VOTE",
+    }
+
+    --
+
+    StateLabel.Text = NameMap[StateName] or StateName
+    Controller.StartTime = StartTime
+    Controller.EndTime = StartTime + Constants[ConstantsMap[StateName] .. "_TIME"]
+end
+
+function Controller:StateDataUpdate()
+    local Frame = Controller.Gui.GameState
+    local DataLabel = Frame.Main.Main.Data
+
+    if not Controller.EndTime then return end
+    DataLabel.Text = math.abs(math.clamp(math.floor(Controller.EndTime - workspace:GetServerTimeNow()) , 0, math.huge))
 end
 
 function Controller:ToggleGameState(Enabled:boolean)
@@ -290,7 +328,7 @@ function Controller:StartVote(RandomMaps)
         -- display any existing votes
         Controller:UpdateVoteEntry(MapName, MapEntry, InitialGameState)
 
-        -- listen to trigger
+        -- listen to trigger    
         Controller:TweenButton(MapEntry.MapEntry, MapEntry.Trigger)
 
         MapEntry.Trigger.Activated:Connect(function()
@@ -614,6 +652,9 @@ function Controller.Update()
         Camera.CFrame = Offset
         Viewport:FindFirstChildOfClass("Model"):PivotTo(CFrame.Angles(0, Angle, 0))
     end
+
+    -- update countdown
+    Controller:StateDataUpdate()
 end
 
 return Controller

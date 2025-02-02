@@ -107,15 +107,18 @@ Controller.States.GameLoop = {
         Controller.Map = Map:Clone()
 
         Controller.Map.Parent = workspace.Map
-        Controller.GameInitialTick = tick()
-        Event:FireAllClients("GameState", Controller.GameInitialTick)
+        Controller.GameInitialTick = workspace:GetServerTimeNow()
+        Event:FireAllClients("GameState", {
+            State = Controller.StateMachine.CurrentStateName,
+            StartTime = Controller.GameInitialTick
+        })
 
         for _, Player:Player in ipairs(Players:GetPlayers()) do
             Player:LoadCharacter()
         end
     end,
     Update = function(delta)
-        if tick() - Controller.GameInitialTick >= Constants.ROUND_TIME then
+        if workspace:GetServerTimeNow() - Controller.GameInitialTick >= Constants.ROUND_TIME then
             Controller.StateMachine:SetState("MapVote")
         end
     end,
@@ -128,11 +131,16 @@ Controller.States.GameLoop = {
 -- Map Vote
 Controller.States.MapVote = {
     Start = function()
-        Controller.VoteStart = tick()
+        Controller.VoteStart = workspace:GetServerTimeNow()
+
+        Event:FireAllClients("GameState", {
+            State = Controller.StateMachine.CurrentStateName,
+            StartTime = Controller.VoteStart
+        })
         Controller:StartMapVote()
     end,
     Update = function()
-        if tick() - Controller.VoteStart >= Constants.VOTE_TIME then
+        if workspace:GetServerTimeNow() - Controller.VoteStart >= Constants.VOTE_TIME then
             local Map = ReplicatedStorage.Assets.Maps:FindFirstChild(Controller:GetVotedMap())
             Controller.StateMachine:SetState("GameLoop", Map)
         end
