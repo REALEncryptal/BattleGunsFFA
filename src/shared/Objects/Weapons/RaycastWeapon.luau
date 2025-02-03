@@ -227,6 +227,7 @@ function RaycastWeapon:Fire()
     SoundService:PlayLocalSound(self.Weapon.Sounds.Shoot)
     self.Animations.Fire:Play() 
     self.Springs.Recoil:Shove(Vector3.new(self.Config.RecoilY,self.Config.RecoilX(),.2*30))
+    self.Springs.WeaponRecoil:Shove(Vector3.new(0,0,3))
 end 
 
 function RaycastWeapon:UpdateUi(DeltaTime)
@@ -271,8 +272,7 @@ function RaycastWeapon:FunctionalUpdateViewmodel(UpdatedSprings, DeltaTime): CFr
     self.Gui.Crosshairs.Sniper.Center.Reticle.Position = UDim2.new(0.498 - UpdatedSprings.Sway.X/10, 0, 0.506 + UpdatedSprings.Sway.Y/10, 0)
 
     -- looks kinda goofy
-    --Final *= CFrame.new(UpdatedSprings.Recoil)
-    --      * CFrame.Angles(math.rad(UpdatedSprings.Recoil.Y*50),0,0)
+    Final *= CFrame.new(UpdatedSprings.WeaponRecoil)
 
     return Final
 end

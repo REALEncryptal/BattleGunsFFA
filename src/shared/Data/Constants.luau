@@ -32,18 +32,18 @@ local Constants = {
     KILL_REWARD = 10,
 
     -- CAMERA
-    DEFAULT_FOV = 80,
+    DEFAULT_FOV = 90,
 
     -- MOVEMENT
     GRAVITY = 70,
-    SPEED = 20,
+    SPEED = 30,
     JUMP = 380,
     AUTO_JUMP = false, -- bhop style
     JUMPS = 1, -- how many jumps can be done withtout touching the ground
-    JUMP_DELAY = 0.4, -- how long to wait before allowing another jump
+    JUMP_DELAY = 0.3, -- how long to wait before allowing another jump
     AIR_SPEED = 1.1, -- Modifier for air speed
     AIR_FORCE = 2000;
-    TURN_SPEED = 1,
+    TURN_SPEED = 4,
     ACCEL_TIME = 0,
     DECEL_TIME = 0,    
     FRICTION_WEIGHT = 100,

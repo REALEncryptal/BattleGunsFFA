@@ -79,6 +79,11 @@ function Controller.PlayerAdded(player)
         TotalKills.Name = "Total Kills"
         TotalKills.Value = DataFolder:GetAttribute("Kills")
         TotalKills.Parent = Leaderstats
+
+        -- listen to data changes
+        DataFolder:GetAttributeChangedSignal("Kills"):Connect(function()
+            TotalKills.Value = DataFolder:GetAttribute("Kills")
+        end)
     end
 end
 

@@ -27,6 +27,7 @@ function WeaponObject.new(Weapon)
         Tilt = Spring3.new(), -- tilt when moving left/right
         Move = Spring3.new(5,50,6,6), -- walk bob  mass force damping speed
         Recoil = Spring3.new(6,50,2,7), -- golden values
+        WeaponRecoil = Spring3.new(6,50,2,7), -- golden values
         Impact = Spring3.new() -- when hitting the ground
     }
 

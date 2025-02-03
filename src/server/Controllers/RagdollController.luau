@@ -1,3 +1,4 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Controller = {}
 
 --[[
@@ -99,6 +100,8 @@ function Controller:Ragdoll(Character)
     Character.Humanoid.AutoRotate = false
 
     local Root: BasePart = Character:FindFirstChild("HumanoidRootPart")
+
+    ReplicatedStorage.Assets.VFX.Trail:Clone().Parent = Root
 end
 
 return Controller
