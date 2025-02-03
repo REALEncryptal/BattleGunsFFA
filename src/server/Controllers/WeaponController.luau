@@ -23,13 +23,19 @@ function Controller.PlayerAdded(Player: Player)
 end
 
 function Controller.CharacterAdded(Character, Player)
-    local Weapons = ReplicatedStorage.Assets.Weapons:GetChildren()
-    local EquippedWeapon = Player:GetAttribute("EquippedWeapon")
+    -- only do this for players not bots
+    if Player then
+        local Weapons = ReplicatedStorage.Assets.Weapons:GetChildren()
+        local EquippedWeapon = Player:GetAttribute("EquippedWeapon")
 
-    -- Select a weapon
-    local Weapon = Weapons[math.random(1, #Weapons)]
-    if EquippedWeapon ~= "Random" then
-        Weapon = ReplicatedStorage.Assets.Weapons:FindFirstChild(EquippedWeapon)
+        -- Select a weapon
+        local Weapon = Weapons[math.random(1, #Weapons)]
+        if EquippedWeapon ~= "Random" then
+            Weapon = ReplicatedStorage.Assets.Weapons:FindFirstChild(EquippedWeapon)
+        end
+
+        -- Equip weapon
+        Controller:EquipWeapon(Player, Weapon)
     end
 
     -- Tag accessories for raycasting
@@ -39,11 +45,10 @@ function Controller.CharacterAdded(Character, Player)
         CollectionService:AddTag(Accessory, "Accesory")
     end
 
-    -- Equip weapon
-    Controller:EquipWeapon(Player, Weapon)
+    -- Kill event for players and bots
+    local Signal = if Player then CharacterController:GetSignals(Character).Died else Character:FindFirstChild("Humanoid").Died
 
-    -- Kill event
-    CharacterController:GetSignals(Character).Died:Connect(function()
+    Signal:Connect(function()
         if not Character:GetAttribute("LastHitBy") then return end
 
         local Killer = game.Players:GetPlayerByUserId(Character:GetAttribute("LastHitBy"))
@@ -54,7 +59,7 @@ function Controller.CharacterAdded(Character, Player)
         end
 
         -- effects
-        Event:FireClient(Killer, "Kill", Player)
+        Event:FireClient(Killer, "Kill", Player or Character)
         KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"), Character, Killer, Character.PrimaryPart.CFrame)
     end)
 end
@@ -97,7 +102,8 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
     if Instance.Parent then
         if Instance.Parent:IsA("Model") then
             local Health = Instance.Parent:GetAttribute("Health") 
-            if Health then 
+
+            if Health or Instance.Parent:FindFirstChild("Humanoid") then 
                 return Controller:BulletHit(Player, Weapon, Position, Instance)
             end
         end
@@ -179,12 +185,16 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
     Instance = Instance.Parent
 
     local Health = Instance:GetAttribute("Health")
+    local Damage = Config.Damage * (IsHeadShot and Config.HeadshotMultiplier or 1)
     if Health then
-        Health -= Config.Damage * (IsHeadShot and Config.HeadshotMultiplier or 1)
+        Health -= Damage
         Instance:SetAttribute("Health", Health)
-        Instance:SetAttribute("LastHit", tick())
-        Instance:SetAttribute("LastHitBy", Player.UserId)
+    else
+        Instance.Humanoid.Health = Instance.Humanoid.Health - Damage
     end
+    
+    Instance:SetAttribute("LastHit", tick())
+    Instance:SetAttribute("LastHitBy", Player.UserId)
 
     return true
 end

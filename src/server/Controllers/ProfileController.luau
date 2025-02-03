@@ -64,6 +64,21 @@ function Controller.PlayerAdded(player)
                 profile.Data = Controller:FolderToData(player:FindFirstChild("Data"))
             end)
         end
+
+        -- create leaderstats
+        local Leaderstats = Instance.new("Folder")
+        Leaderstats.Name = "leaderstats"
+        Leaderstats.Parent = player
+
+        local Kills = Instance.new("IntValue")
+        Kills.Name = "Kills"
+        Kills.Value = 0
+        Kills.Parent = Leaderstats
+
+        local TotalKills = Instance.new("IntValue")
+        TotalKills.Name = "Total Kills"
+        TotalKills.Value = DataFolder:GetAttribute("Kills")
+        TotalKills.Parent = Leaderstats
     end
 end
 

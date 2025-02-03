@@ -2,11 +2,12 @@ local Constants = {
     -- PLACE
     VERSION = 1,
     DEBUG = true,
+    LOOP = false, -- run the game loop
     DATASAVE = false, -- toggles player data load and save 
 
     -- MAPS
     VOTE_TIME = 30,
-    ROUND_TIME = 1,
+    ROUND_TIME = 30,
 
     -- PROFILE
     PROFILE_TEMPLATE = {

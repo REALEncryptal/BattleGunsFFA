@@ -25,7 +25,9 @@ function Controller:Init()
         )
     end
 
-    Controller.StateMachine:SetState("Initial")
+    if Constants.LOOP then 
+        Controller.StateMachine:SetState("Initial")
+    end
 
     --
     Controller.IsVoting = false
@@ -76,6 +78,13 @@ function Controller:Init()
     end)
 
     Event:Listen("GameState", function(Player)
+        if not Constants.LOOP then
+            return {
+                State = "Test",
+                StartTime = workspace:GetServerTimeNow()
+            }
+        end
+
         -- Return current game state info
         if Controller.StateMachine.CurrentStateName == "MapVote" then
             return {
@@ -101,7 +110,12 @@ function Controller.PlayerAdded(Player)
 end
 
 function Controller.Update(Delta)
-    Controller.StateMachine:Update(Delta)
+    if Constants.LOOP then
+        if not Controller.StateMachine.CurrentState then
+            Controller.StateMachine:SetState("Initial")
+        end
+        Controller.StateMachine:Update(Delta)
+    end
 end
 
 -- States

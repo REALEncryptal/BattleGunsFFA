@@ -9,6 +9,7 @@ local Controller = {}
 
 function Controller:PreInit()
     Controller.Gui = game.Players.LocalPlayer.PlayerGui:WaitForChild("Game")
+    game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 end
 
 local Event, MonetizationController, NumberFormat, UiScale, Constants, WeaponController
@@ -215,7 +216,14 @@ function Controller:UpdateGameState(State)
 
     StateLabel.Text = NameMap[StateName] or StateName
     Controller.StartTime = StartTime
-    Controller.EndTime = StartTime + Constants[ConstantsMap[StateName] .. "_TIME"]
+
+    local StateLength = math.huge
+
+    if Constants[StateName] then
+        StateLength = Constants[ConstantsMap[StateName] .. "_TIME"]
+    end
+
+    Controller.EndTime = StartTime + StateLength
 end
 
 function Controller:StateDataUpdate()
