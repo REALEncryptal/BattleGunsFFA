@@ -574,9 +574,13 @@ function Controller:KillResult(Player:Player | Model) -- Player or NPC
 end
 
 function Controller:Hitmarker()
-    Controller.HitmarkTween = Controller.HitmarkTween or TweenService:Create(Controller.Gui.Hitmarker, TweenInfo.new(.2, Enum.EasingStyle.Quad), {ImageTransparency = 1})
+    Controller.HitmarkTween = Controller.HitmarkTween or TweenService:Create(Controller.Gui.Hitmarker, TweenInfo.new(.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {ImageTransparency = 0})
+    TweenService:Create(Controller.Gui.Hitmarker, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Rotation = math.random(-15,15)}):Play()
 
-    Controller.Gui.Hitmarker.ImageTransparency = 0
+    Controller.HitmarkTweenEvent = Controller.HitmarkTweenEvent or Controller.HitmarkTween.Completed:Connect(function()
+        Controller.Gui.Hitmarker.ImageTransparency = 1
+    end)
+
     Controller.HitmarkTween:Play()
 end
 

@@ -45,6 +45,9 @@ function Controller.CharacterAdded(Character, Player)
         CollectionService:AddTag(Accessory, "Accesory")
     end
 
+    -- add effects
+    ReplicatedStorage.Assets.VFX.Blood:Clone().Parent = Character.HumanoidRootPart
+
     -- Kill event for players and bots
     local Signal = if Player then CharacterController:GetSignals(Character).Died else Character:FindFirstChild("Humanoid").Died
 
@@ -105,17 +108,17 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
 
             if Health or Instance.Parent:FindFirstChild("Humanoid") then 
                 return Controller:BulletHit(Player, Weapon, Position, Instance)
+            else
+                -- Create bullet hole
+                local BulletHole = ReplicatedStorage.Assets.BulletHole:Clone()
+                BulletHole.Position = Position
+                BulletHole.CFrame = CFrame.new(Position, Position + Normal) * CFrame.Angles(0, 0, math.random(0, 360))
+                BulletHole.Parent = workspace.Ignore
+
+                Debris:AddItem(BulletHole, 10)
             end
         end
     end
-
-    -- Create bullet hole
-    local BulletHole = ReplicatedStorage.Assets.BulletHole:Clone()
-    BulletHole.Position = Position
-    BulletHole.CFrame = CFrame.new(Position, Position + Normal) * CFrame.Angles(0, 0, math.random(0, 360))
-    BulletHole.Parent = workspace.Ignore
-
-    Debris:AddItem(BulletHole, 10)
 
     return true
 end

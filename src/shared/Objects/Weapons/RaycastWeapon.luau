@@ -91,7 +91,8 @@ function RaycastWeapon:BulletHit(RaycastResult): boolean
     task.spawn(function()
         local Valid = shared.Import("Event"):InvokeServer("RaycastWeapon", self.OriginalWeapon, RaycastResult.Position, RaycastResult.Instance, RaycastResult.Normal)
 
-        if not Debug then return end
+        if not Debug then return false end
+        if not DebugSurface:FindFirstChild("CylinderHandleAdornment") then return false end
         if not Valid then
             DebugSurface.CylinderHandleAdornment.Color3 = Color3.fromRGB(255,0,0)
         else
@@ -102,10 +103,12 @@ function RaycastWeapon:BulletHit(RaycastResult): boolean
     if RaycastResult.Instance.Parent:IsA("Model") then
         local Health = RaycastResult.Instance.Parent:GetAttribute("Health")
 
-        if Health then
+        if Health or RaycastResult.Instance.Parent:FindFirstChildOfClass("Humanoid") then
             return RaycastResult.Instance
         end
     end
+
+    return false
 end
 
 function RaycastWeapon:ADS(ADS:boolean)
@@ -214,6 +217,9 @@ function RaycastWeapon:Fire()
     if HitCharacter then
         shared.Import("InterfaceController"):Hitmarker()
         task.spawn(function()
+            --effects
+            HitCharacter.Parent.HumanoidRootPart.Blood:Emit(20)
+
             task.wait(.05)
             if HitCharacter.Name == "Head" then
                 SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker1)

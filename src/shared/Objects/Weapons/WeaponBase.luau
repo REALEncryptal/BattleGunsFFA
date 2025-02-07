@@ -123,8 +123,8 @@ function WeaponObject:Update(DeltaTime): boolean
 
     if Moving and self.Grounded then
         self.Springs.Move:Shove(Vector3.new(
-            math.cos(tick()*7)*.15,
-            math.sin(tick()*7*2)*.12-.2,
+            math.cos(tick()*12)*.15,
+            math.sin(tick()*12*2)*.15-.2,
             0
         ))
     elseif Moving and not self.Grounded then
