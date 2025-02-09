@@ -2,12 +2,15 @@ local Constants = {
     -- PLACE
     VERSION = 1,
     DEBUG = true,
-    LOOP = false, -- run the game loop
+    LOOP = true, -- run the game loop
     DATASAVE = false, -- toggles player data load and save 
+
+    -- WEAPON
+    HITMARK = false, -- debug hitmarks
 
     -- MAPS
     VOTE_TIME = 30,
-    ROUND_TIME = 30,
+    ROUND_TIME = 60,
 
     -- PROFILE
     PROFILE_TEMPLATE = {
@@ -32,7 +35,7 @@ local Constants = {
     KILL_REWARD = 10,
 
     -- CAMERA
-    DEFAULT_FOV = 90,
+    DEFAULT_FOV = 100,
 
     -- MOVEMENT
     GRAVITY = 70,

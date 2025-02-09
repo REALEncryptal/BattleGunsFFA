@@ -70,13 +70,8 @@ function Controller.PlayerAdded(player)
         Leaderstats.Name = "leaderstats"
         Leaderstats.Parent = player
 
-        local Kills = Instance.new("IntValue")
-        Kills.Name = "Kills"
-        Kills.Value = 0
-        Kills.Parent = Leaderstats
-
         local TotalKills = Instance.new("IntValue")
-        TotalKills.Name = "Total Kills"
+        TotalKills.Name = "Kills"
         TotalKills.Value = DataFolder:GetAttribute("Kills")
         TotalKills.Parent = Leaderstats
 

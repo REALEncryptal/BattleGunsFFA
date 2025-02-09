@@ -2,7 +2,6 @@ local Util = {}
 
 local TweenService = game:GetService("TweenService")
 local Camera = game.Workspace.CurrentCamera
-Camera.FieldOfView = 80
 
 local userInputService = game:GetService("UserInputService")
 local UserGameSettings = UserSettings():GetService("UserGameSettings")

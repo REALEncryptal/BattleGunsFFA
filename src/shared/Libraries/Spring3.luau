@@ -22,6 +22,7 @@ end
 
 -- Shove Method
 function SPRING:Shove(force)
+	force *= 100
 	local x, y, z = force.X, force.Y, force.Z
 	if x ~= x or x == math.huge or x == -math.huge then x = 0 end
 	if y ~= y or y == math.huge or y == -math.huge then y = 0 end

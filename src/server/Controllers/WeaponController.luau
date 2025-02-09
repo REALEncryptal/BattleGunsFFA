@@ -12,6 +12,8 @@ function Controller:Init()
 
     Event:Listen("RaycastWeapon", Controller.RaycastWeapon)
     Event:Listen("SelectWeapon", Controller.SelectWeapon)
+
+    workspace.Camera.FieldOfView = Constants.DEFAULT_FOV
 end
 
 function Controller.PlayerAdded(Player: Player)
@@ -47,6 +49,7 @@ function Controller.CharacterAdded(Character, Player)
 
     -- add effects
     ReplicatedStorage.Assets.VFX.Blood:Clone().Parent = Character.HumanoidRootPart
+    ReplicatedStorage.Assets.Highlight:Clone().Parent = Character
 
     -- Kill event for players and bots
     local Signal = if Player then CharacterController:GetSignals(Character).Died else Character:FindFirstChild("Humanoid").Died

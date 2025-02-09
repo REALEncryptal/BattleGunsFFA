@@ -15,7 +15,7 @@ function RaycastWeapon.new(Weapon)
     local self = setmetatable(WeaponBase.new(Weapon), RaycastWeapon)
 
     self.OriginalWeapon = Weapon
-    
+
     self.IsADS = false
     self.WishFire = false
     self.LastDischarge = tick()
@@ -77,7 +77,7 @@ function RaycastWeapon:Reload()
 end
 
 function RaycastWeapon:BulletHit(RaycastResult): boolean
-    local Debug =  shared.Import("Constants").DEBUG
+    local Debug =  shared.Import("Constants").DEBUG and shared.Import("Constants").HITMARK
     local DebugSurface
     if Debug then
         DebugSurface = ReplicatedStorage.Assets.DebugSurface:Clone()
@@ -146,6 +146,9 @@ function RaycastWeapon:Fire()
     end
     self.Bullets -= 1
     self.LastDischarge = tick()
+
+    -- open crosshair
+    shared.Import("InterfaceController"):ShoveCrosshair(.5*self.DeltaTime)
 
     -- tween
     shared.Import("InterfaceController"):TweenAmmoUi()
@@ -218,7 +221,12 @@ function RaycastWeapon:Fire()
         shared.Import("InterfaceController"):Hitmarker()
         task.spawn(function()
             --effects
-            HitCharacter.Parent.HumanoidRootPart.Blood:Emit(20)
+            local BloodEmitter = HitCharacter.Parent.HumanoidRootPart:FindFirstChild("Blood")
+            if BloodEmitter then
+                BloodEmitter:Emit(20)
+            else
+                shared.Import("Constants"):Debug("[RaycastWeapon] No blood emitter found, is this a registered character?")
+            end
 
             task.wait(.05)
             if HitCharacter.Name == "Head" then
@@ -232,8 +240,8 @@ function RaycastWeapon:Fire()
     -- Effects
     SoundService:PlayLocalSound(self.Weapon.Sounds.Shoot)
     self.Animations.Fire:Play() 
-    self.Springs.Recoil:Shove(Vector3.new(self.Config.RecoilY,self.Config.RecoilX(),.2*30))
-    self.Springs.WeaponRecoil:Shove(Vector3.new(0,0,3))
+    self.Springs.Recoil:Shove(Vector3.new(self.Config.RecoilY,self.Config.RecoilX(),.2*30) * self.DeltaTime)
+    self.Springs.WeaponRecoil:Shove(Vector3.new(0,0,3) * self.DeltaTime)
 end 
 
 function RaycastWeapon:UpdateUi(DeltaTime)

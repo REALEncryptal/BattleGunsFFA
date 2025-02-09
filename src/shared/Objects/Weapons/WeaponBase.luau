@@ -9,6 +9,8 @@ function WeaponObject.new(Weapon)
 
     local Spring3 = shared.Import "Spring3"
 
+
+    self.DeltaTime = 0
     self.Enabled = true
     self.Destroyed = false
 
@@ -20,6 +22,7 @@ function WeaponObject.new(Weapon)
 
     self.Viewmodel.Parent = workspace.CurrentCamera
     self.Grounded = false
+    
 
     -- create springs
     self.Springs = {
@@ -99,6 +102,7 @@ function WeaponObject:FunctionalUpdateCamera(UpdatedSprings, DeltaTime): CFrame
 end
 
 function WeaponObject:Update(DeltaTime): boolean
+    self.DeltaTime = DeltaTime
     self:FunctionalUpdate(DeltaTime)
     if not self.Enabled or self.Destroyed then return false end
 
@@ -114,7 +118,7 @@ function WeaponObject:Update(DeltaTime): boolean
     local OffsetFinal = CFrame.new()
 
     -- calculate sway
-    self.Springs.Sway:Shove(Vector3.new(-MouseDelta.X/90, MouseDelta.Y/90, 0))
+    self.Springs.Sway:Shove(Vector3.new(-MouseDelta.X/90, MouseDelta.Y/90, 0) * self.DeltaTime)
 
     -- calculate move
     local Moving = shared.Import("CharacterController"):IsCharacterMoving(Character)
@@ -126,11 +130,11 @@ function WeaponObject:Update(DeltaTime): boolean
             math.cos(tick()*12)*.15,
             math.sin(tick()*12*2)*.15-.2,
             0
-        ))
+        )*DeltaTime)
     elseif Moving and not self.Grounded then
         self.Springs.Move:Shove(Vector3.new())
     elseif not self.Grounded then
-        self.Springs.Move:Shove(Vector3.new(0,.1,0))
+        self.Springs.Move:Shove(Vector3.new(0,.1,0) * self.DeltaTime)
     end
     
     local TiltAmount = CameraCFrame:VectorToObjectSpace(Character.Humanoid.MoveDirection).Unit.X
@@ -140,10 +144,10 @@ function WeaponObject:Update(DeltaTime): boolean
         TiltAmount = 0
     end
 
-    self.Springs.Tilt:Shove(Vector3.new(TiltAmount,TiltAmount*2,0))
+    self.Springs.Tilt:Shove(Vector3.new(TiltAmount,TiltAmount*2,0) * self.DeltaTime)
 
     if self.Grounded and not WasGrounded and Character.HumanoidRootPart.AssemblyLinearVelocity.Y < -10 then
-        self.Springs.Impact:Shove(Vector3.new(0,-1,0))
+        self.Springs.Impact:Shove(Vector3.new(0,-1,0) * self.DeltaTime)
     end
 
     -- add offsets
@@ -170,11 +174,16 @@ function WeaponObject:Update(DeltaTime): boolean
         * CFrame.Angles(0, 0, math.rad(UpdatedSprings.Tilt.X*-5))
         * self:FunctionalUpdateViewmodel(UpdatedSprings, DeltaTime)
 
+    -- camera
+    CameraCFrame *= 
+    self:FunctionalUpdateCamera(UpdatedSprings, DeltaTime) 
+    --* CFrame.Angles(math.rad(UpdatedSprings.Move.Y*10),math.rad(UpdatedSprings.Move.X*10),0)
+
     -- set viewmodel pos
     self.Viewmodel.PrimaryPart.CFrame = CameraCFrame * SpringFinal * OffsetFinal
 
     -- set camera pos
-    workspace.CurrentCamera.CFrame = CameraCFrame * self:FunctionalUpdateCamera(UpdatedSprings, DeltaTime)
+    workspace.CurrentCamera.CFrame = CameraCFrame
 
     return true
 end

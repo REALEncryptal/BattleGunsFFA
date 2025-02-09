@@ -12,7 +12,7 @@ function Controller:PreInit()
     game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 end
 
-local Event, MonetizationController, NumberFormat, UiScale, Constants, WeaponController
+local Event, MonetizationController, NumberFormat, UiScale, Constants, WeaponController, Spring3
 function Controller:Init()
     Event = shared.Import "Event"
     MonetizationController = shared.Import "MonetizationController"
@@ -20,12 +20,16 @@ function Controller:Init()
     UiScale = shared.Import "UiScale"
     Constants = shared.Import "Constants"
     WeaponController = shared.Import "WeaponController"
+    Spring3 = shared.Import "Spring3"
 
     Controller.SpreadAngle = 0
     Controller.Crosshair = nil
     Controller.StartTime = 0
     Controller.CurrentFrame = nil
     Controller.Enabled = true
+    Controller.CrosshairSpring = Spring3.new(3, 50, 4, 10)
+    --mass, force, damping, speed
+    -- 5     50     4        4
 
     Event:Listen("Kill", function(Player:Player)
         Controller:KillResult(Player)
@@ -104,7 +108,7 @@ function Controller:SetupAnimations()
 
     Controller.FrameCloseTweens = {
         TweenService:Create(game.Lighting.Blur, TweenInfo.new(.2, Enum.EasingStyle.Quad), {Size = 0}),
-        TweenService:Create(workspace.CurrentCamera, TweenInfo.new(.2, Enum.EasingStyle.Quad), {FieldOfView = 70}),
+        TweenService:Create(workspace.CurrentCamera, TweenInfo.new(.2, Enum.EasingStyle.Quad), {FieldOfView = Constants.DEFAULT_FOV}),
     }
 end
 
@@ -219,7 +223,7 @@ function Controller:UpdateGameState(State)
 
     local StateLength = math.huge
 
-    if Constants[StateName] then
+    if ConstantsMap[StateName] then
         StateLength = Constants[ConstantsMap[StateName] .. "_TIME"]
     end
 
@@ -590,6 +594,14 @@ function Controller:UseCrosshair(CrosshairName)
     end
 
     Controller.Crosshair = Controller.Gui:WaitForChild("Crosshairs"):FindFirstChild(CrosshairName)
+
+    Controller.OffsetLeft = if Controller.Crosshair:FindFirstChild("Left") then Controller.Crosshair:FindFirstChild("Left").Position else nil
+    Controller.OffsetRight = if Controller.Crosshair:FindFirstChild("Right") then Controller.Crosshair:FindFirstChild("Right").Position else nil
+    Controller.OffsetUp = if Controller.Crosshair:FindFirstChild("Up") then Controller.Crosshair:FindFirstChild("Up").Position else nil
+    Controller.OffsetDown = if Controller.Crosshair:FindFirstChild("Down") then Controller.Crosshair:FindFirstChild("Down").Position else nil
+
+    print(Controller)
+
     Controller.Crosshair.Visible = true
 end
 
@@ -618,12 +630,47 @@ function Controller:SetSpread(Spread)
 
     Left.Position = UDim2.new(-Offset, 0, 0.5, 0)
     Right.Position = UDim2.new(1 + Offset, 0, 0.5, 0)
+    Controller.OffsetLeft = Left.Position
+    Controller.OffsetRight = Right.Position
 
     if not Up or not Down then return end
 
     Up.Position = UDim2.new(0.5, 0, -Offset, 0)
     Down.Position = UDim2.new(0.5, 0, 1 + Offset, 0)
+    Controller.OffsetUp = Up.Position
+    Controller.OffsetDown = Down.Position
 end
+
+function Controller:ShoveCrosshair(Amount)
+    Controller.CrosshairSpring:Shove(Vector3.new(Amount, 0,0))
+end
+
+function Controller:UpdateCrosshair(DT)
+    local Position = Controller.CrosshairSpring:Update(DT)
+
+    if not Controller.Crosshair then return end
+    local Left = Controller.Crosshair:FindFirstChild("Left")
+    local Right = Controller.Crosshair:FindFirstChild("Right")
+    local Up = Controller.Crosshair:FindFirstChild("Up")
+    local Down = Controller.Crosshair:FindFirstChild("Down")
+
+    if Left and Controller.OffsetLeft then
+        Left.Position = UDim2.new(Controller.OffsetLeft.X.Scale - Position.X, 0, Controller.OffsetLeft.Y.Scale, 0)
+    end
+
+    if Right and Controller.OffsetRight then
+        Right.Position = UDim2.new(Controller.OffsetRight.X.Scale + Position.X, 0, Controller.OffsetRight.Y.Scale, 0)
+    end
+
+    if Up and Controller.OffsetUp then
+        Up.Position = UDim2.new(Controller.OffsetUp.X.Scale, 0, Controller.OffsetUp.Y.Scale - Position.X, 0)
+    end
+
+    if Down and Controller.OffsetDown then
+        Down.Position = UDim2.new(Controller.OffsetDown.X.Scale, 0, Controller.OffsetDown.Y.Scale + Position.X, 0)
+    end
+end
+
 function Controller:TweenAmmoUi()
     Controller.AmmoTweenIn = Controller.AmmoTweenIn or TweenService:Create(Controller.Gui.WeaponInfo.Ammo.Ammo, TweenInfo.new(.05, Enum.EasingStyle.Quad), {Size = UDim2.new(1,0,.7,0)})
     Controller.AmmoTweenOut = Controller.AmmoTweenOut or TweenService:Create(Controller.Gui.WeaponInfo.Ammo.Ammo, TweenInfo.new(.1, Enum.EasingStyle.Quad), {Size = UDim2.new(1,0,1,0)})
@@ -653,7 +700,7 @@ function Controller:TweenCooldown(Time): Tween
 end
 
 -- UPDATE
-function Controller.Update()
+function Controller.Update(DT)
     for _, Viewport in pairs(Controller.ViewportFrames) do
         local Camera = Viewport:FindFirstChildOfClass("Camera")
         local HoverTick = Viewport:GetAttribute("HoverTick")
@@ -669,6 +716,11 @@ function Controller.Update()
 
     -- update countdown
     Controller:StateDataUpdate()
+
+    -- update crosshair
+    if Controller.Crosshair then
+        Controller:UpdateCrosshair(DT)
+    end
 end
 
 return Controller

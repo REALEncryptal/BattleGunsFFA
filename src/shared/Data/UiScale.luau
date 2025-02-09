@@ -24,15 +24,35 @@ return {
         },
         {
             MaxWidth = 900,
-            Scale = {.8,.8}
+            Scale = {.75,.75}
         },
         {
             MaxWidth = 1100,
-            Scale = {.65,.65}
+            Scale = {.6,.6}
         },
         {
             MaxWidth = math.huge,
-            Scale = {.5,.5}
+            Scale = {.45,.45}
+        }
+    },
+    Guns = {
+        {
+            MaxWidth = 900,
+            Scale = {.7,.7}
+        },  
+        {
+            MaxWidth = math.huge,
+            Scale = {.45,.45}   
+        }
+    },
+    Shop = {
+        {
+            MaxWidth = 900,
+            Scale = {.7,.7}
+        },  
+        {
+            MaxWidth = math.huge,
+            Scale = {.45,.45}
         }
     }
 }

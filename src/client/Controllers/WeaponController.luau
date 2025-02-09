@@ -37,6 +37,7 @@ function Controller._CharacterAdded(Character)
     end)
 
     workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+    workspace.CurrentCamera.FieldOfView = Constants.DEFAULT_FOV
 end
 
 function Controller.SetWeapon(Weapon:Model)
