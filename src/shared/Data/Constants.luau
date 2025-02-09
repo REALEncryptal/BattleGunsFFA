@@ -39,12 +39,12 @@ local Constants = {
 
     -- MOVEMENT
     GRAVITY = 70,
-    SPEED = 30,
+    SPEED = 20,
     JUMP = 380,
     AUTO_JUMP = false, -- bhop style
     JUMPS = 1, -- how many jumps can be done withtout touching the ground
     JUMP_DELAY = 0.2, -- how long to wait before allowing another jump
-    AIR_SPEED = 1.1, -- Modifier for air speed
+    AIR_SPEED = 1.0, -- Modifier for air speed
     AIR_FORCE = 2000;
     TURN_SPEED = 4,
     ACCEL_TIME = 0,

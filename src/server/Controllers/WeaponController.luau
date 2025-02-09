@@ -182,8 +182,8 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
 
     local Config = require(Weapon:FindFirstChild("Configuration"))
     -- Check distance
-    local Distance = (Position - Instance.Position).Magnitude
-    if Distance > 10 then return false end
+    --local Distance = (Position - Instance.Position).Magnitude
+    --if Distance > 10 then return false end
 
     -- Damage
     local IsHeadShot = Instance.Name == "Head"

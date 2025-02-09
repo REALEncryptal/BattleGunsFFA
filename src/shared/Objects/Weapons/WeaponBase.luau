@@ -39,11 +39,7 @@ function WeaponObject.new(Weapon)
     }
 
     -- apply humanoid description
-    local Description:HumanoidDescription = game.Players.LocalPlayer.Character:WaitForChild("Humanoid"):GetAppliedDescription()
-    self.Viewmodel.Shirt.ShirtTemplate = Description.Shirt
-    self.Viewmodel.BodyColors.LeftArmColor3 = Description.LeftArmColor
-    self.Viewmodel.BodyColors.RightArmColor3 = Description.RightArmColor
-
+    self.Viewmodel.Humanoid:ApplyDescription(game.Players:GetHumanoidDescriptionFromUserId(game.Players.LocalPlayer.UserId))
     -- rig weapon
     self:Rig()
 

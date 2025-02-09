@@ -600,8 +600,6 @@ function Controller:UseCrosshair(CrosshairName)
     Controller.OffsetUp = if Controller.Crosshair:FindFirstChild("Up") then Controller.Crosshair:FindFirstChild("Up").Position else nil
     Controller.OffsetDown = if Controller.Crosshair:FindFirstChild("Down") then Controller.Crosshair:FindFirstChild("Down").Position else nil
 
-    print(Controller)
-
     Controller.Crosshair.Visible = true
 end
 
