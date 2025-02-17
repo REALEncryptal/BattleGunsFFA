@@ -8,6 +8,8 @@ local Constants = {
 
     -- WEAPON
     HITMARK = false, -- debug hitmarks
+    BULLET_SPEED = 1000, 
+    BULLET_ACCELERATION = -Vector3.yAxis * 50,
 
     -- MAPS
     VOTE_TIME = 20,

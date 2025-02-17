@@ -16,11 +16,19 @@ function Controller:Init()
 
     workspace.Camera.FieldOfView = Constants.DEFAULT_FOV
 
-    --task.spawn(function()
-    --    while task.wait(1) do
-    --        Event:FireAllClients("PlaySound", Vector3.new(-25, 79.01, 10.554), ReplicatedStorage.Assets.Weapons.M4A1.Sounds.Shoot)
-     --   end
-    --end)
+    task.spawn(function()
+        while task.wait(1) do
+            Event:FireAllClients("PlaySound", Vector3.new(-25, 79.01, 10.554), ReplicatedStorage.Assets.Weapons.M4A1.Sounds.Shoot)
+
+            Event:FireAllClients(
+                "FireProjectile", 
+                workspace.Ignore, 
+                ReplicatedStorage.Assets.Weapons.M4A1, 
+                Vector3.new(-25, 79.01, 10.554), 
+                Vector3.new(1, 0, 0)
+            )
+        end
+    end)
 end
 
 function Controller.PlayerAdded(Player: Player)
@@ -99,7 +107,22 @@ end
 
 -- Projectile fire
 function Controller.FireProjectile(Player:Player, Weapon:Model, Origin:Vector3, Direction:Vector3)
-    --TODO: IMPLEMENT FIRE REPLICATION
+    -- Validate weapon
+    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
+
+    -- Validate player
+    local Character = Player.Character
+    if not Character then return false end
+
+    local Health = Character:GetAttribute("Health")
+    if not Health or Health <= 0 then return false end
+
+    -- Replicate shot
+    for _, OtherPlayer in pairs(game.Players:GetPlayers()) do
+        if OtherPlayer == Player then continue end
+
+        Event:FireClient(OtherPlayer, "FireProjectile", Player.Character, Weapon, Origin, Direction)
+    end
 end
 
 -- Shot validation
@@ -135,7 +158,6 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
     end
 
     -- Create bullet hole
-    print("Bullet hole")
     local BulletHole = ReplicatedStorage.Assets.BulletHole:Clone()
     BulletHole.Position = Position
     BulletHole.CFrame = CFrame.new(Position, Position + Normal) * CFrame.Angles(0, 0, math.random(0, 360))

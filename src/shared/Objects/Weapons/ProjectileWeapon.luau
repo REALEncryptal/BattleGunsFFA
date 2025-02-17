@@ -14,13 +14,14 @@ function ProjectileWeapon.new(Weapon)
     local self = setmetatable(FirearmBase.new(Weapon), ProjectileWeapon)
 
     local FastCast = shared.Import("FastCastRedux")
+    FastCast.VisualizeCasts = shared.Import("Constants").SHOW_CASTS
 
     self.Caster = FastCast.new()
     self.CastBehaviour = FastCast.newBehavior()
 
     --
     self.CastBehaviour.RaycastParams = self:CreateParams()
-    self.CastBehaviour.Acceleration = -Vector3.yAxis*50
+    self.CastBehaviour.Acceleration = shared.Import("Constants").BULLET_ACCELERATION
     self.CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers.Physical
     self.CastBehaviour.CosmeticBulletContainer = workspace.Ignore
 
@@ -74,7 +75,10 @@ function ProjectileWeapon:FunctionalFire(Origin:Vector3, SpreadDirection:Vector3
     -- move the bullet forward a little
     offset += self.Weapon.PrimaryPart.Tip.WorldCFrame.LookVector * 5
 
-    self.Caster:Fire(Origin, SpreadDirection, self.Config.BulletVelocity or 500, offset, self.CastBehaviour)
+    self.Caster:Fire(Origin, SpreadDirection, self.Config.BulletVelocity or shared.Import("Constants").BULLET_SPEED, offset, self.CastBehaviour)
+
+    -- tell server to replicate the shot visually
+    shared.Import("Event"):FireServer("FireProjectile", self.OriginalWeapon, Origin, SpreadDirection)
 end
 
 return ProjectileWeapon

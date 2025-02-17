@@ -20,7 +20,6 @@ function Controller:Init()
     Controller.Enabled = true
 
     Event:Listen("SetWeapon", Controller.SetWeapon)
-    Event:Listen("PlaySound", Controller.PlaySound)
 
     CharacterController:OnCharacterAdded(game.Players.LocalPlayer):Connect(Controller._CharacterAdded)
 end
@@ -72,10 +71,6 @@ function Controller:Toggle(Enabled)
     if Controller.Weapon then
         Controller.Weapon:Toggle(Enabled)
     end
-end
-
-function Controller.PlaySound(Position: Vector3, Sound: Sound)
-    PlaySound(Sound, Position)
 end
 
 function Controller.Update(DeltaTime)

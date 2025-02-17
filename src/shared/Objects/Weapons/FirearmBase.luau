@@ -257,7 +257,7 @@ function FirearmBase:FunctionalUpdate(DeltaTime)
     self.WishFire = self.IsFirePressed
 
     if not WasWishFire and self.WishFire and self.Bullets <= 0 then
-        shared.Import("PlaySound")(ReplicatedStorage.Assets.Empty)
+        shared.Import("PlaySound")(ReplicatedStorage.Assets.SFX.Empty)
     end
 
     if self.WishFire and self.Config.Automatic then
