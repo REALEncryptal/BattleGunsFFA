@@ -9,7 +9,6 @@ function WeaponObject.new(Weapon)
 
     local Spring3 = shared.Import "Spring3"
 
-
     self.DeltaTime = 0
     self.Enabled = true
     self.Destroyed = false
@@ -40,6 +39,7 @@ function WeaponObject.new(Weapon)
 
     -- apply humanoid description
     self.Viewmodel.Humanoid:ApplyDescription(game.Players:GetHumanoidDescriptionFromUserId(game.Players.LocalPlayer.UserId))
+
     -- rig weapon
     self:Rig()
 

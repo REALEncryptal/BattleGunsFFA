@@ -12,6 +12,7 @@ function Controller:Init()
     Event:Listen("Loaded", function(Player)
         if Player:GetAttribute("Loaded") then return end
         Player:SetAttribute("Loaded", true)
+        task.wait(1)
         Player:LoadCharacter()
     end)
 end

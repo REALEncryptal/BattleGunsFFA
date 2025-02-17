@@ -11,6 +11,7 @@ function Controller:Init()
 
     Controller.WeaponTypes = {
         RaycastWeapon =  shared.Import "RaycastWeapon",
+        ProjectileWeapon =  shared.Import "ProjectileWeapon",
         WeaponBase =  shared.Import "WeaponBase",
     }
 
@@ -41,15 +42,17 @@ function Controller._CharacterAdded(Character)
 end
 
 function Controller.SetWeapon(Weapon:Model)
-    if Controller.Weapon then
-        Controller.Weapon:Destroy()
-    end
-
     local Config = require(Weapon.Configuration)
 
+    
     if not Controller.WeaponTypes[Config.Type] then
         Constants:Debug("Invalid weapon type or missing type")
         return
+    end
+
+    if Controller.Weapon then 
+        Controller.Weapon:Destroy()
+        workspace.CurrentCamera:ClearAllChildren()
     end
 
     Controller.Weapon = Controller.WeaponTypes[Config.Type].new(Weapon)

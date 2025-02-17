@@ -8,11 +8,11 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local WeaponBase = require(script.Parent.WeaponBase)
 
-local RaycastWeapon = setmetatable({}, WeaponBase)
-RaycastWeapon.__index = RaycastWeapon
+local FirearmBase = setmetatable({}, WeaponBase)
+FirearmBase.__index = FirearmBase
 
-function RaycastWeapon.new(Weapon)
-    local self = setmetatable(WeaponBase.new(Weapon), RaycastWeapon)
+function FirearmBase.new(Weapon)
+    local self = setmetatable(WeaponBase.new(Weapon), FirearmBase)
 
     if self.Config.Springs then
         for SpringName, SpringData in pairs(self.Config.Springs) do
@@ -22,7 +22,6 @@ function RaycastWeapon.new(Weapon)
             self.Springs[SpringName].Damping = SpringData.Damping or self.Springs[SpringName].Damping
             self.Springs[SpringName].Speed = SpringData.Speed or self.Springs[SpringName].Speed
         end
-
         shared.Import("InterfaceController"):ApplyCrosshairSpringData(self.Config.Springs.Crosshair or {})
     end
 
@@ -69,7 +68,7 @@ function RaycastWeapon.new(Weapon)
     return self
 end
 
-function RaycastWeapon:Toggle(Enabled)
+function FirearmBase:Toggle(Enabled)
     self.Enabled = Enabled
     
     if self.Viewmodel and not self.Destroyed then
@@ -78,7 +77,7 @@ function RaycastWeapon:Toggle(Enabled)
     shared.Import("InterfaceController"):ToggleWeapons(Enabled)
 end
 
-function RaycastWeapon:Reload()
+function FirearmBase:Reload()
     if not self.Enabled then return end
     if self.Bullets == self.Config.Bullets then return end
     if self.Animations.Reload.IsPlaying then return end
@@ -88,42 +87,7 @@ function RaycastWeapon:Reload()
     self.CooldownTween = shared.Import("InterfaceController"):TweenCooldown(self.Animations.Reload.Length)
 end
 
-function RaycastWeapon:BulletHit(RaycastResult): boolean
-    local Debug =  shared.Import("Constants").DEBUG and shared.Import("Constants").HITMARK
-    local DebugSurface
-    if Debug then
-        DebugSurface = ReplicatedStorage.Assets.DebugSurface:Clone()
-        DebugSurface.Position = RaycastResult.Position
-        DebugSurface.CFrame = CFrame.new(RaycastResult.Position, RaycastResult.Normal + RaycastResult.Position)
-        DebugSurface.Parent = workspace.Debug
-    end
-    
-
-    -- Validate hit
-    task.spawn(function()
-        local Valid = shared.Import("Event"):InvokeServer("RaycastWeapon", self.OriginalWeapon, RaycastResult.Position, RaycastResult.Instance, RaycastResult.Normal)
-
-        if not Debug then return false end
-        if not DebugSurface:FindFirstChild("CylinderHandleAdornment") then return false end
-        if not Valid then
-            DebugSurface.CylinderHandleAdornment.Color3 = Color3.fromRGB(255,0,0)
-        else
-            DebugSurface.CylinderHandleAdornment.Color3 = Color3.fromRGB(0,255,0)
-        end
-    end)
-
-    if RaycastResult.Instance.Parent:IsA("Model") then
-        local Health = RaycastResult.Instance.Parent:GetAttribute("Health")
-
-        if Health or RaycastResult.Instance.Parent:FindFirstChildOfClass("Humanoid") then
-            return RaycastResult.Instance
-        end
-    end
-
-    return false
-end
-
-function RaycastWeapon:ADS(ADS:boolean)
+function FirearmBase:ADS(ADS:boolean)
     if self.Destroyed then return end
     if not self.Config.ADS then return end
 
@@ -136,7 +100,7 @@ function RaycastWeapon:ADS(ADS:boolean)
         self.Offsets.Hide = CFrame.new(0,-100,0)
         InterfaceController:UseCrosshair(self.Config.CrosshairADS)
         CameraUtil:TweenFov(self.Config.FovADS, .1)
-        InterfaceController.Enabled = false
+        InterfaceController.Enabled = falseRa
     else
         CameraUtil:SetSensitivityModifier(1)
         self.Offsets.Hide = CFrame.new(0,0,0)
@@ -148,7 +112,24 @@ function RaycastWeapon:ADS(ADS:boolean)
     self.IsADS = ADS
 end
 
-function RaycastWeapon:Fire()
+function FirearmBase:CreateParams():RaycastParams
+    local Params = RaycastParams.new()
+    Params.FilterDescendantsInstances = {
+        self.Viewmodel, 
+        game.Players.LocalPlayer.Character, 
+        workspace.Debug, 
+        workspace.Ignore, 
+        unpack(CollectionService:GetTagged("Accessory")), 
+        unpack(CollectionService:GetTagged("Ignore")),
+        unpack(CollectionService:GetTagged("Weapon"))
+    }
+    Params.RespectCanCollide = false
+    Params.FilterType = Enum.RaycastFilterType.Exclude
+
+    return Params
+end
+
+function FirearmBase:Fire()
     if self.Destroyed then return end
     if not self.Enabled then return end
     if self.Bullets <= 0 then return end
@@ -166,18 +147,7 @@ function RaycastWeapon:Fire()
     shared.Import("InterfaceController"):TweenAmmoUi()
 
     -- client raycast
-    local Params = RaycastParams.new()
-    Params.FilterDescendantsInstances = {
-        self.Viewmodel, 
-        game.Players.LocalPlayer.Character, 
-        workspace.Debug, 
-        workspace.Ignore, 
-        unpack(CollectionService:GetTagged("Accessory")), 
-        unpack(CollectionService:GetTagged("Ignore")),
-        unpack(CollectionService:GetTagged("Weapon"))
-    }
-    Params.RespectCanCollide = false
-    Params.FilterType = Enum.RaycastFilterType.Exclude
+    local Params = self:CreateParams()
 
     -- fire
     local HitCharacter = false
@@ -205,48 +175,8 @@ function RaycastWeapon:Fire()
             * CFrame.Angles(SpreadY, SpreadX, 0)).LookVector * 10000
 
 
-        local RaycastResult:RaycastResult = workspace:Raycast(Origin, SpreadDirection, Params)
-
-        if RaycastResult then
-            local BulletHitCharacter = self:BulletHit(RaycastResult)
-            HitCharacter = HitCharacter or BulletHitCharacter
-            Direction = RaycastResult.Position
-        end
-
-        local OriginEffect = self.Weapon.PrimaryPart.Tip.WorldPosition
-
-        if self.IsADS then
-            OriginEffect = workspace.CurrentCamera.CFrame.Position - Vector3.new(0,3,0)
-        end
-
-        task.spawn(function()
-            shared.Import("ImpactEffect")(RaycastResult)
-            shared.Import("RayEffect")[self.Config.RayEffect or "Default"](OriginEffect, Direction)
-        end)
-    end
-
-    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and shared.Import("Constants").DEBUG then
-        workspace.Debug:ClearAllChildren()
-    end
-
-    if HitCharacter then
-        shared.Import("InterfaceController"):Hitmarker()
-        task.spawn(function()
-            --effects
-            local BloodEmitter = HitCharacter.Parent.HumanoidRootPart:FindFirstChild("Blood")
-            if BloodEmitter then
-                BloodEmitter:Emit(20)
-            else
-                shared.Import("Constants"):Debug("[RaycastWeapon] No blood emitter found, is this a registered character?")
-            end
-
-            task.wait(.05)
-            if HitCharacter.Name == "Head" then
-                SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker1)
-            else
-                SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker)
-            end
-        end)
+        -- raycast
+        self:FunctionalFire(Origin, SpreadDirection, Params)
     end
 
     -- Effects
@@ -257,7 +187,45 @@ function RaycastWeapon:Fire()
     self.Springs.WeaponRecoil:Shove(Vector3.new(0,0,self.Config.SpringRecoil) * self.DeltaTime)
 end 
 
-function RaycastWeapon:UpdateUi(DeltaTime)
+function FirearmBase:HitEffect(HitCharacter)
+    shared.Import("InterfaceController"):Hitmarker()
+    task.spawn(function()
+        --effects
+        local BloodEmitter = HitCharacter.Parent.HumanoidRootPart:FindFirstChild("Blood")
+        if BloodEmitter then
+            BloodEmitter:Emit(20)
+        else
+            shared.Import("Constants"):Debug("[FirearmBase] No blood emitter found, is this a registered character?")
+        end
+
+        task.wait(.05)
+        if HitCharacter.Name == "Head" then
+            SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker1)
+        else
+            SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker)
+        end
+    end)
+end
+
+function FirearmBase:FunctionalValidateHit(RaycastResult:RaycastResult) end
+
+function FirearmBase:BulletHit(RaycastResult): boolean
+
+    -- Validate hit
+    self:FunctionalValidateHit(RaycastResult)
+
+    if RaycastResult.Instance.Parent:IsA("Model") then
+        local Health = RaycastResult.Instance.Parent:GetAttribute("Health")
+
+        if Health or RaycastResult.Instance.Parent:FindFirstChildOfClass("Humanoid") then
+            return RaycastResult.Instance
+        end
+    end
+
+    return false
+end
+
+function FirearmBase:UpdateUi(DeltaTime)
     self.Gui.WeaponInfo.Weapon.Text = self.Config.Name
     self.Gui.WeaponInfo.Ammo.Ammo.Text = self.Bullets
     self.Gui.WeaponInfo.Ammo.Sub.Text = "/"..self.Config.Bullets
@@ -271,7 +239,7 @@ function RaycastWeapon:UpdateUi(DeltaTime)
     end 
 end
 
-function RaycastWeapon:FunctionalUpdate(DeltaTime)
+function FirearmBase:FunctionalUpdate(DeltaTime)
     if not self.Enabled then return end
     if self.Destroyed then return end
 
@@ -293,7 +261,7 @@ function RaycastWeapon:FunctionalUpdate(DeltaTime)
     end
 end
 
-function RaycastWeapon:FunctionalUpdateViewmodel(UpdatedSprings, DeltaTime): CFrame
+function FirearmBase:FunctionalUpdateViewmodel(UpdatedSprings, DeltaTime): CFrame
     local Final = CFrame.new()
 
     self.Gui.Crosshairs.Sniper.Center.Reticle.Position = UDim2.new(0.498 - UpdatedSprings.Sway.X/10, 0, 0.506 + UpdatedSprings.Sway.Y/10, 0)
@@ -304,7 +272,7 @@ function RaycastWeapon:FunctionalUpdateViewmodel(UpdatedSprings, DeltaTime): CFr
     return Final
 end
 
-function RaycastWeapon:FunctionalUpdateCamera(UpdatedSprings, DeltaTime): CFrame
+function FirearmBase:FunctionalUpdateCamera(UpdatedSprings, DeltaTime): CFrame
     local Final = CFrame.new()
 
     -- Up/Down, Left/Right, Tilt
@@ -314,4 +282,4 @@ function RaycastWeapon:FunctionalUpdateCamera(UpdatedSprings, DeltaTime): CFrame
     
 end
 
-return RaycastWeapon
+return FirearmBase

@@ -1,6 +1,8 @@
 local ContextActionService = game:GetService("ContextActionService")
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -28,6 +30,7 @@ function Controller:Init()
     Controller.CurrentFrame = nil
     Controller.Enabled = true
     Controller.CrosshairSpring = Spring3.new(3, 50, 4, 10)
+    Controller.DefaultSpringData = {3, 50, 4, 10}
     --mass, force, damping, speed
     -- 5     50     4        4
 
@@ -196,7 +199,16 @@ function Controller:SetupGameState()
         Controller:UpdateGameState(GameState)
     end)
 
+    game.Players.LocalPlayer:WaitForChild("Data"):GetAttributeChangedSignal("Kills"):Connect(function()
+        Controller:UpdateKills()
+    end)
+
+    Controller:UpdateKills()
     Controller:UpdateGameState(Event:InvokeServer("GameState"))
+end
+
+function Controller:UpdateKills()
+    Controller.Gui.GameState.Right.Main.Kills.Text = NumberFormat(game.Players.LocalPlayer.Data:GetAttribute("Kills"))
 end
 
 function Controller:UpdateGameState(State)
@@ -248,16 +260,47 @@ function Controller:SetupMoney()
     
     Controller:UpdateMoney(Data)
 
-    Data.AttributeChanged:Connect(function()
+    Data:GetAttributeChangedSignal("Money"):Connect(function()
         Controller:UpdateMoney(Data)
     end)
 end
 
 function Controller:UpdateMoney(Data)
+    if not Controller.PrevMoney then
+        Controller.PrevMoney = Data:GetAttribute("Money")
+    end
+
     local MoneyFrame = Controller.Gui.LeftBar.Money.Money
     local Amount = Data:GetAttribute("Money")
 
     MoneyFrame.Amount.Text = NumberFormat(Amount)
+
+    if Amount ~= Controller.PrevMoney then
+        Controller:MoneyChanged(Amount - Controller.PrevMoney)
+    end
+
+    Controller.PrevMoney = Amount
+end
+
+function Controller:MoneyChanged(Amount)
+    local AmountChangedLabel = ReplicatedStorage.Assets.Interface.AmountChangedLabel:Clone()
+    AmountChangedLabel.TextColor3 = Amount > 0 and Color3.fromRGB(125, 255, 125) or Color3.fromRGB(255, 125, 125)
+    AmountChangedLabel.Text = (Amount > 0 and "+" or "-") .. NumberFormat(Amount)
+    AmountChangedLabel.Parent = Controller.Gui.LeftBar.Money.Money
+
+    AmountChangedLabel.UIStroke.Color = Amount > 0 and Color3.fromRGB(87, 163, 87) or Color3.fromRGB(163, 87, 87)
+
+    local NewPosition = UDim2.new(AmountChangedLabel.Position.X.Scale, 0, AmountChangedLabel.Position.Y.Scale - (Amount > 0 and 1 or -1), 0)
+
+    local TextTween = TweenService:Create(AmountChangedLabel, TweenInfo.new(1, Enum.EasingStyle.Quad), {Position = NewPosition, TextTransparency = 1})
+    local StrokeTween = TweenService:Create(AmountChangedLabel.UIStroke, TweenInfo.new(1, Enum.EasingStyle.Quad), {Transparency = 1})
+
+    TextTween:Play()
+    StrokeTween:Play()
+
+    SoundService:PlayLocalSound(ReplicatedStorage.Assets.Money) 
+
+    Debris:AddItem(AmountChangedLabel, 1)
 end
 
 -- VOTE SCREEN
@@ -610,6 +653,12 @@ end
 
 function Controller:ToggleCrosshair(State:boolean)
     Controller.Crosshair.Visible = State
+end
+
+function Controller:ApplyCrosshairSpringData(Data)
+    for Name, Value in pairs(Data) do
+        Controller.CrosshairSpring[Name] = Value or Controller.DefaultSpringData[Name]
+    end
 end
 
 function Controller:SetSpread(Spread)

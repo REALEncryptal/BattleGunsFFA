@@ -10,7 +10,8 @@ function Controller:Init()
     CharacterController = shared.Import "CharacterController"
     KillEffectController = shared.Import "KillEffectController"
 
-    Event:Listen("RaycastWeapon", Controller.RaycastWeapon)
+    Event:Listen("FireProjectile", Controller.FireProjectile) -- replicate fast cast shots to other clients
+    Event:Listen("RaycastWeapon", Controller.RaycastWeapon)-- for raycasting
     Event:Listen("SelectWeapon", Controller.SelectWeapon)
 
     workspace.Camera.FieldOfView = Constants.DEFAULT_FOV
@@ -42,6 +43,9 @@ function Controller.CharacterAdded(Character, Player)
 
     -- Tag accessories for raycasting
     for _, Accessory:Accessory in pairs(Character:GetDescendants()) do
+        if Accessory:IsA("BasePart") then
+            Accessory.CollisionGroup = "Player"
+        end
         if not Accessory:IsA("Accessory") then continue end
 
         CollectionService:AddTag(Accessory, "Accesory")
@@ -61,7 +65,11 @@ function Controller.CharacterAdded(Character, Player)
 
         -- award killer
         if Killer then
+            --TODO: BETTER HEADSHOT DETECTION
             Killer.Data:SetAttribute("Kills", Killer.Data:GetAttribute("Kills") + 1)
+
+            local MoneyReward = Character:GetAttribute("LastHitHeadshot") and Constants.HEAD_KILL_REWARD or Constants.KILL_REWARD
+            Killer.Data:SetAttribute("Money", Killer.Data:GetAttribute("Money") + MoneyReward)
         end
 
         -- effects
@@ -83,12 +91,17 @@ function Controller.SelectWeapon(Player, WeaponName)
     return true
 end
 
+-- Projectile fire
+function Controller.FireProjectile(Player:Player, Weapon:Model, Origin:Vector3, Direction:Vector3)
+    --TODO: IMPLEMENT FIRE REPLICATION
+end
+
 -- Shot validation
 function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3, Instance: Instance, Normal:Vector3): boolean
     if not Instance then return false end
 
     -- Validate weapon
-    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) then return false end
+    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
 
     -- Validate player
     local Character = Player.Character
@@ -178,7 +191,7 @@ end
 
 -- Bullet hit
 function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:Instance): boolean
-    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) then return false end
+    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
 
     local Config = require(Weapon:FindFirstChild("Configuration"))
     -- Check distance
@@ -201,6 +214,7 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
     
     Instance:SetAttribute("LastHit", tick())
     Instance:SetAttribute("LastHitBy", Player.UserId)
+    Instance:SetAttribute("LastHitHeadshot", IsHeadShot)
 
     return true
 end

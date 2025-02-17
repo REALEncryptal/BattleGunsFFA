@@ -70,6 +70,11 @@ function Controller.PlayerAdded(player)
         Leaderstats.Name = "leaderstats"
         Leaderstats.Parent = player
 
+        local Money = Instance.new("IntValue")
+        Money.Name = "Money"
+        Money.Value = DataFolder:GetAttribute("Money")
+        Money.Parent = Leaderstats
+
         local TotalKills = Instance.new("IntValue")
         TotalKills.Name = "Kills"
         TotalKills.Value = DataFolder:GetAttribute("Kills")
@@ -78,6 +83,10 @@ function Controller.PlayerAdded(player)
         -- listen to data changes
         DataFolder:GetAttributeChangedSignal("Kills"):Connect(function()
             TotalKills.Value = DataFolder:GetAttribute("Kills")
+        end)
+
+        DataFolder:GetAttributeChangedSignal("Money"):Connect(function()
+            Money.Value = DataFolder:GetAttribute("Money")
         end)
     end
 end
