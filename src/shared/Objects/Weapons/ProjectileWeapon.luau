@@ -29,23 +29,11 @@ function ProjectileWeapon.new(Weapon)
         self:BulletHit(RaycastResult)
     end)
 
-    self.Caster.LengthChanged:Connect(function(_, segmentOrigin, segmentDirection, length, _, cosmeticBulletObject)
+    self.Caster.LengthChanged:Connect(function(cast, segmentOrigin, segmentDirection, length, _, cosmeticBulletObject)
 	    if cosmeticBulletObject == nil then return end
 
-
-        local tipCFrame = self.Weapon.PrimaryPart.Tip.WorldCFrame
-
-        if not cosmeticBulletObject:GetAttribute("Offset") then
-            cosmeticBulletObject:SetAttribute("Offset", tipCFrame.Position - workspace.CurrentCamera.CFrame.Position )
-        end
-
-        local offset = cosmeticBulletObject:GetAttribute("Offset")
-
 	    local bulletLength = cosmeticBulletObject.Size.Z / 2 -- This is used to move the bullet to the right spot based on a CFrame offset
-	    --local baseCFrame = CFrame.new(segmentOrigin, segmentOrigin + segmentDirection) 
-
-        -- make it look like the bullet is coming from the tip of the gun
-        segmentOrigin = tipCFrame.Position
+        segmentOrigin += cast.UserData.CosmeticOffset
         local baseCFrame = CFrame.new(segmentOrigin, segmentOrigin+ segmentDirection)
 
 	    cosmeticBulletObject.CFrame = baseCFrame * CFrame.new(0, 0, -(length - bulletLength))
@@ -77,7 +65,9 @@ function ProjectileWeapon:FunctionalValidateHit(RaycastResult:RaycastResult)
 end
 
 function ProjectileWeapon:FunctionalFire(Origin:Vector3, SpreadDirection:Vector3, Params:RaycastParams)
-    self.Caster:Fire(Origin, SpreadDirection, self.Config.BulletVelocity or 500, self.CastBehaviour)
+    local offset = Vector3.new(0, 2, 0)
+
+    self.Caster:Fire(Origin, SpreadDirection, self.Config.BulletVelocity or 500, offset, self.CastBehaviour)
 end
 
 return ProjectileWeapon

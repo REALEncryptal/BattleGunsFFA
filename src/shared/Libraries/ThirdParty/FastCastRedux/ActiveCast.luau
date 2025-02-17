@@ -419,7 +419,7 @@ end
 -----------------------------------------------------------
 
 -- Ctor
-function ActiveCastStatic.new(caster: Caster, origin: Vector3, direction: Vector3, velocity: Vector3 | number, castDataPacket: FastCastBehavior): ActiveCast
+function ActiveCastStatic.new(caster: Caster, origin: Vector3, direction: Vector3, velocity: Vector3 | number, cosmeticOffset: Vector3, castDataPacket: FastCastBehavior): ActiveCast
 	if typeof(velocity) == "number" then
 		velocity = direction.Unit * velocity
 	end	
@@ -463,7 +463,9 @@ function ActiveCastStatic.new(caster: Caster, origin: Vector3, direction: Vector
 			CanPierceCallback = castDataPacket.CanPierceFunction
 		},
 		
-		UserData = {}
+		UserData = {
+			CosmeticOffset = cosmeticOffset
+		}
 	}
 	
 	if cast.StateInfo.HighFidelityBehavior == 2 then
@@ -482,7 +484,7 @@ function ActiveCastStatic.new(caster: Caster, origin: Vector3, direction: Vector
 		-- The provider is nil. Use a cosmetic object clone.
 		if cast.RayInfo.CosmeticBulletObject ~= nil then
 			cast.RayInfo.CosmeticBulletObject = cast.RayInfo.CosmeticBulletObject:Clone()
-			cast.RayInfo.CosmeticBulletObject.CFrame = CFrame.new(origin, origin + direction)
+			cast.RayInfo.CosmeticBulletObject.CFrame = CFrame.new(origin + cosmeticOffset, origin + cosmeticOffset + direction)
 			cast.RayInfo.CosmeticBulletObject.Parent = castDataPacket.CosmeticBulletContainer
 		end
 	else
@@ -500,7 +502,7 @@ function ActiveCastStatic.new(caster: Caster, origin: Vector3, direction: Vector
 			end
 
 			cast.RayInfo.CosmeticBulletObject = castDataPacket.CosmeticBulletProvider:GetPart()
-			cast.RayInfo.CosmeticBulletObject.CFrame = CFrame.new(origin, origin + direction)
+			cast.RayInfo.CosmeticBulletObject.CFrame = CFrame.new(origin + cosmeticOffset, origin + cosmeticOffset + direction)
 			usingProvider = true
 		else
 			warn("FastCastBehavior.CosmeticBulletProvider was not an instance of the PartCache module (an external/separate model)! Are you inputting an instance created via PartCache.new? If so, are you on the latest version of PartCache? Setting FastCastBehavior.CosmeticBulletProvider to nil.")

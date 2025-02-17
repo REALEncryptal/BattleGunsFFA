@@ -133,10 +133,11 @@ function FastCast.newBehavior(): FastCastBehavior
 end
 
 local DEFAULT_DATA_PACKET = FastCast.newBehavior()
-function FastCast:Fire(origin: Vector3, direction: Vector3, velocity: Vector3 | number, castDataPacket: FastCastBehavior?): ActiveCast
-	if castDataPacket == nil then castDataPacket = DEFAULT_DATA_PACKET end
+function FastCast:Fire(origin: Vector3, direction: Vector3, velocity: Vector3 | number, cosmeticOffset: Vector3,castDataPacket: FastCastBehavior?): ActiveCast
+	castDataPacket = castDataPacket or DEFAULT_DATA_PACKET
+	cosmeticOffset = cosmeticOffset or Vector3.new()
 	
-	local cast = ActiveCastStatic.new(self, origin, direction, velocity, castDataPacket)
+	local cast = ActiveCastStatic.new(self, origin, direction, velocity, cosmeticOffset, castDataPacket)
 	cast.RayInfo.WorldRoot = self.WorldRoot
 	return cast
 end
