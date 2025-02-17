@@ -21,6 +21,8 @@ return function (Weapon, Power)
                                         + ShellEffect.CFrame.UpVector * math.random() * 2
     ShellEffect.AssemblyAngularVelocity = ShellEffect.CFrame.UpVector * Power
 
+
+
     table.insert(Shells, ShellEffect)
 
     local conn conn = ShellEffect.Touched:Connect(function(Hit)
@@ -29,6 +31,16 @@ return function (Weapon, Power)
         if Hit:IsDescendantOf(game.Players.LocalPlayer.Character) then return end
 
         ShellEffect.Sound:Play()
+
+        if shared.Import("Constants").DEBUG then
+            local DebugGui = ReplicatedStorage.Assets.AudioDebug:Clone()
+            DebugGui.Parent = ShellEffect
+    
+            DebugGui.SoundName.Text = "Shell"
+    
+            Debris:AddItem(DebugGui, ShellEffect.Sound.TimeLength + 2)
+        end
+
         conn:Disconnect()
     end)
 

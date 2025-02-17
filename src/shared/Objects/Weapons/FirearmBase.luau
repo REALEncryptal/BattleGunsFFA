@@ -100,7 +100,7 @@ function FirearmBase:ADS(ADS:boolean)
         self.Offsets.Hide = CFrame.new(0,-100,0)
         InterfaceController:UseCrosshair(self.Config.CrosshairADS)
         CameraUtil:TweenFov(self.Config.FovADS, .1)
-        InterfaceController.Enabled = falseRa
+        InterfaceController.Enabled = false
     else
         CameraUtil:SetSensitivityModifier(1)
         self.Offsets.Hide = CFrame.new(0,0,0)
@@ -146,6 +146,15 @@ function FirearmBase:Fire()
     -- tween
     shared.Import("InterfaceController"):TweenAmmoUi()
 
+    -- effects
+    task.spawn(function()
+        shared.Import("PlaySound")(self.Weapon.Sounds.Shoot) 
+        shared.Import("ShellEffect")(self.Weapon, self.Config.EjectPower or 10)
+        self.Animations.Fire:Play() 
+        self.Springs.Recoil:Shove(Vector3.new(self.Config.RecoilY,self.Config.RecoilX(),.2*30) * self.DeltaTime)
+        self.Springs.WeaponRecoil:Shove(Vector3.new(0,0,self.Config.SpringRecoil) * self.DeltaTime)
+    end)
+
     -- client raycast
     local Params = self:CreateParams()
 
@@ -178,13 +187,6 @@ function FirearmBase:Fire()
         -- raycast
         self:FunctionalFire(Origin, SpreadDirection, Params)
     end
-
-    -- Effects
-    SoundService:PlayLocalSound(self.Weapon.Sounds.Shoot)
-    shared.Import("ShellEffect")(self.Weapon, self.Config.EjectPower or 10)
-    self.Animations.Fire:Play() 
-    self.Springs.Recoil:Shove(Vector3.new(self.Config.RecoilY,self.Config.RecoilX(),.2*30) * self.DeltaTime)
-    self.Springs.WeaponRecoil:Shove(Vector3.new(0,0,self.Config.SpringRecoil) * self.DeltaTime)
 end 
 
 function FirearmBase:HitEffect(HitCharacter)
@@ -197,12 +199,10 @@ function FirearmBase:HitEffect(HitCharacter)
         else
             shared.Import("Constants"):Debug("[FirearmBase] No blood emitter found, is this a registered character?")
         end
-
-        task.wait(.05)
         if HitCharacter.Name == "Head" then
-            SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker1)
+            shared.Import("PlaySound")(ReplicatedStorage.Assets.Hitmarker1)
         else
-            SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker)
+            shared.Import("PlaySound")(ReplicatedStorage.Assets.Hitmarker)
         end
     end)
 end
@@ -211,6 +211,10 @@ function FirearmBase:FunctionalValidateHit(RaycastResult:RaycastResult) end
 
 function FirearmBase:BulletHit(RaycastResult): boolean
 
+    task.spawn(function()
+        shared.Import("ImpactEffect")(RaycastResult)
+    end)
+
     -- Validate hit
     self:FunctionalValidateHit(RaycastResult)
 
@@ -218,6 +222,8 @@ function FirearmBase:BulletHit(RaycastResult): boolean
         local Health = RaycastResult.Instance.Parent:GetAttribute("Health")
 
         if Health or RaycastResult.Instance.Parent:FindFirstChildOfClass("Humanoid") then
+
+            self:HitEffect(RaycastResult.Instance)
             return RaycastResult.Instance
         end
     end
@@ -251,7 +257,7 @@ function FirearmBase:FunctionalUpdate(DeltaTime)
     self.WishFire = self.IsFirePressed
 
     if not WasWishFire and self.WishFire and self.Bullets <= 0 then
-        SoundService:PlayLocalSound(ReplicatedStorage.Assets.Empty)
+        shared.Import("PlaySound")(ReplicatedStorage.Assets.Empty)
     end
 
     if self.WishFire and self.Config.Automatic then

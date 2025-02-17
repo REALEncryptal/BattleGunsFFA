@@ -298,7 +298,7 @@ function Controller:MoneyChanged(Amount)
     TextTween:Play()
     StrokeTween:Play()
 
-    SoundService:PlayLocalSound(ReplicatedStorage.Assets.Money) 
+    SoundService:PlayLocalSound(ReplicatedStorage.Assets.SFX.Money) 
 
     Debris:AddItem(AmountChangedLabel, 1)
 end

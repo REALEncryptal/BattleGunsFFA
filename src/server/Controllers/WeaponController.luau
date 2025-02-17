@@ -15,6 +15,12 @@ function Controller:Init()
     Event:Listen("SelectWeapon", Controller.SelectWeapon)
 
     workspace.Camera.FieldOfView = Constants.DEFAULT_FOV
+
+    --task.spawn(function()
+    --    while task.wait(1) do
+    --        Event:FireAllClients("PlaySound", Vector3.new(-25, 79.01, 10.554), ReplicatedStorage.Assets.Weapons.M4A1.Sounds.Shoot)
+     --   end
+    --end)
 end
 
 function Controller.PlayerAdded(Player: Player)
@@ -124,17 +130,18 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
 
             if Health or Instance.Parent:FindFirstChild("Humanoid") then 
                 return Controller:BulletHit(Player, Weapon, Position, Instance)
-            else
-                -- Create bullet hole
-                local BulletHole = ReplicatedStorage.Assets.BulletHole:Clone()
-                BulletHole.Position = Position
-                BulletHole.CFrame = CFrame.new(Position, Position + Normal) * CFrame.Angles(0, 0, math.random(0, 360))
-                BulletHole.Parent = workspace.Ignore
-
-                Debris:AddItem(BulletHole, 10)
             end
         end
     end
+
+    -- Create bullet hole
+    print("Bullet hole")
+    local BulletHole = ReplicatedStorage.Assets.BulletHole:Clone()
+    BulletHole.Position = Position
+    BulletHole.CFrame = CFrame.new(Position, Position + Normal) * CFrame.Angles(0, 0, math.random(0, 360))
+    BulletHole.Parent = workspace.Ignore
+
+    Debris:AddItem(BulletHole, 10)
 
     return true
 end

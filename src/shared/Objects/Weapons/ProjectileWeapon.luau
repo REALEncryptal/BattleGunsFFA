@@ -21,7 +21,7 @@ function ProjectileWeapon.new(Weapon)
     --
     self.CastBehaviour.RaycastParams = self:CreateParams()
     self.CastBehaviour.Acceleration = -Vector3.yAxis*50
-    self.CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers.YellowTrail
+    self.CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers.Physical
     self.CastBehaviour.CosmeticBulletContainer = workspace.Ignore
 
     -- events
@@ -53,7 +53,10 @@ function ProjectileWeapon:FunctionalValidateHit(RaycastResult:RaycastResult)
     local Event = shared.Import "Event"
 
     task.spawn(function()
-        local Valid = Event:FireServer("RaycastWeapon", self.OriginalWeapon, RaycastResult.Position, RaycastResult.Instance, RaycastResult.Normal)
+        local Valid = Event:InvokeServer("RaycastWeapon", self.OriginalWeapon, RaycastResult.Position, RaycastResult.Instance, RaycastResult.Normal)
+        if not Valid then
+            warn("[FireProjectile] Server rejected hit")
+        end
     end)
 
 
@@ -65,7 +68,11 @@ function ProjectileWeapon:FunctionalValidateHit(RaycastResult:RaycastResult)
 end
 
 function ProjectileWeapon:FunctionalFire(Origin:Vector3, SpreadDirection:Vector3, Params:RaycastParams)
-    local offset = Vector3.new(0, 2, 0)
+    -- looks like the bullet is fired from the tip of the weapon
+    local offset = self.Weapon.PrimaryPart.Tip.WorldCFrame.Position - workspace.CurrentCamera.CFrame.Position
+
+    -- move the bullet forward a little
+    offset += self.Weapon.PrimaryPart.Tip.WorldCFrame.LookVector * 5
 
     self.Caster:Fire(Origin, SpreadDirection, self.Config.BulletVelocity or 500, offset, self.CastBehaviour)
 end

@@ -1,7 +1,7 @@
 local Constants = {
     -- PLACE
     VERSION = 1,
-    DEBUG = false,
+    DEBUG = true,
     LOOP = true, -- run the game loop
     SHOW_CASTS = false, -- show debug casts
     DATASAVE = false, -- toggles player data load and save 

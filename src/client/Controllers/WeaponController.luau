@@ -1,13 +1,14 @@
 local Debris = game:GetService("Debris")
 local Controller = {}
 
-local Event, RaycastWeapon, CharacterController, Camera, Constants
+local Event, RaycastWeapon, CharacterController, Camera, Constants, PlaySound
 function Controller:Init()
     Event = shared.Import "Event"
     RaycastWeapon = shared.Import "RaycastWeapon"
     CharacterController = shared.Import "CharacterController"
     Camera = shared.Import "Camera"
     Constants = shared.Import "Constants"
+    PlaySound = shared.Import "PlaySound"
 
     Controller.WeaponTypes = {
         RaycastWeapon =  shared.Import "RaycastWeapon",
@@ -74,20 +75,7 @@ function Controller:Toggle(Enabled)
 end
 
 function Controller.PlaySound(Position: Vector3, Sound: Sound)
-    local SoundOrigin = Instance.new("Part")
-    SoundOrigin.Position = Position
-    SoundOrigin.Anchored = true
-    SoundOrigin.CanCollide = false
-    SoundOrigin.Size = Vector3.new(0.1, 0.1, 0.1)
-    SoundOrigin.Transparency = 1
-    SoundOrigin.Parent = workspace
-    SoundOrigin.CanQuery = false
-
-    local SoundInstance = Sound:Clone()
-    SoundInstance.Parent = SoundOrigin
-    SoundInstance:Play()
-
-    Debris:AddItem(SoundOrigin, SoundInstance.TimeLength)
+    PlaySound(Sound, Position)
 end
 
 function Controller.Update(DeltaTime)

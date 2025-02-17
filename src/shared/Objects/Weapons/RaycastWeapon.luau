@@ -242,9 +242,9 @@ function RaycastWeapon:Fire()
 
             task.wait(.05)
             if HitCharacter.Name == "Head" then
-                SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker1)
+                SoundService:PlayLocalSound(ReplicatedStorage.Assets.SFX.Hitmarker1)
             else
-                SoundService:PlayLocalSound(ReplicatedStorage.Assets.Hitmarker)
+                SoundService:PlayLocalSound(ReplicatedStorage.Assets.SFX.Hitmarker)
             end
         end)
     end
@@ -283,7 +283,7 @@ function RaycastWeapon:FunctionalUpdate(DeltaTime)
     self.WishFire = self.IsFirePressed
 
     if not WasWishFire and self.WishFire and self.Bullets <= 0 then
-        SoundService:PlayLocalSound(ReplicatedStorage.Assets.Empty)
+        SoundService:PlayLocalSound(ReplicatedStorage.Assets.SFX.Empty)
     end
 
     if self.WishFire and self.Config.Automatic then

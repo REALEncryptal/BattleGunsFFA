@@ -12,6 +12,9 @@ return function (RaycastResult:RaycastResult)
     local ImpactEffect = ReplicatedStorage.Assets.Particles:FindFirstChild(Material.Name) or ReplicatedStorage.Assets.Particles:FindFirstChild("Any")
     ImpactEffect = ImpactEffect:Clone()
 
+    local ImpactSound = ReplicatedStorage.Assets.SFX.BulletImpact:FindFirstChild(Material.Name) or ReplicatedStorage.Assets.SFX.BulletImpact:FindFirstChild("Any")
+    shared.Import("PlaySound")(ImpactSound, Position)
+
     if ImpactEffect.Name == "Any" then
         local Color = RaycastResult.Instance.Color
         local H, S, V = Color:ToHSV()
