@@ -200,9 +200,9 @@ function FirearmBase:HitEffect(HitCharacter)
             shared.Import("Constants"):Debug("[FirearmBase] No blood emitter found, is this a registered character?")
         end
         if HitCharacter.Name == "Head" then
-            shared.Import("PlaySound")(ReplicatedStorage.Assets.Hitmarker1)
+            shared.Import("PlaySound")(ReplicatedStorage.Assets.SFX.Hitmarker1)
         else
-            shared.Import("PlaySound")(ReplicatedStorage.Assets.Hitmarker)
+            shared.Import("PlaySound")(ReplicatedStorage.Assets.SFX.Hitmarker)
         end
     end)
 end

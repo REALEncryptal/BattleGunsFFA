@@ -14,7 +14,17 @@ function Controller:PreInit()
     game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 end
 
-local Event, MonetizationController, NumberFormat, UiScale, Constants, WeaponController, Spring3
+local 
+    Event, 
+    MonetizationController, 
+    NumberFormat, 
+    UiScale, 
+    Constants, 
+    WeaponController, 
+    Spring3, 
+    PlaySound,
+    SoundtrackController
+
 function Controller:Init()
     Event = shared.Import "Event"
     MonetizationController = shared.Import "MonetizationController"
@@ -23,6 +33,8 @@ function Controller:Init()
     Constants = shared.Import "Constants"
     WeaponController = shared.Import "WeaponController"
     Spring3 = shared.Import "Spring3"
+    PlaySound = shared.Import "PlaySound"
+    SoundtrackController = shared.Import "SoundtrackController"
 
     Controller.SpreadAngle = 0
     Controller.Crosshair = nil
@@ -39,6 +51,10 @@ function Controller:Init()
     end)
 
     -- Setup Frames
+    task.spawn(function()
+        Controller:SetupLoadingScreen()
+    end)
+    
     Controller:SetupAnimations()
     Controller:SetupVoteScreen()
     Controller:SetupShopFrame()
@@ -46,12 +62,30 @@ function Controller:Init()
     Controller:SetupMoney()
     Controller:SetupUiScale()
     Controller:SetupGameState()
+    
 
     -- Check if we joined during a map vote
     local GameState = Event:InvokeServer("GameState")
     if GameState.State == "MapVote" then
         Controller:StartVote(GameState.Maps, GameState.StartTime)
     end
+end
+
+-- LOADING SCREEN
+function Controller:SetupLoadingScreen()
+    local Sound = PlaySound(ReplicatedStorage.Assets.SFX.HeliWars)
+    local LoadingScreen = Controller.Gui.Screens:WaitForChild("Loading")
+
+    LoadingScreen.Visible = true
+
+    game.Players.LocalPlayer.AttributeChanged:Connect(function(Attribute)
+        if Attribute == "Loaded" then
+            LoadingScreen.Visible = false
+            Sound:Stop()
+
+            SoundtrackController:Play()
+        end
+    end)
 end
 
 -- Ui Scale

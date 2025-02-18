@@ -11,9 +11,9 @@ function Controller:Init()
 
     Event:Listen("Loaded", function(Player)
         if Player:GetAttribute("Loaded") then return end
-        Player:SetAttribute("Loaded", true)
         task.wait(1)
         Player:LoadCharacter()
+        Player:SetAttribute("Loaded", true)
     end)
 end
 
@@ -22,6 +22,12 @@ function Controller.PlayerAdded(Player:Player)
 end
 
 function Controller.CharacterAdded(Character)
+    local Humanoid = Character:WaitForChild("Humanoid")
+    Humanoid.WalkSpeed = Constants.SPEED
+    Humanoid.JumpPower = Constants.JUMP
+
+    -- old controller
+    if true then return end -- disable for now
     if Character:FindFirstChild("ControllerManager") then return end
     local Manager = Instance.new("ControllerManager")
     local GroundController = Instance.new("GroundController", Manager)

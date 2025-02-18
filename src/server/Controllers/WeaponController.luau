@@ -16,19 +16,19 @@ function Controller:Init()
 
     workspace.Camera.FieldOfView = Constants.DEFAULT_FOV
 
-    task.spawn(function()
-        while task.wait(1) do
-            Event:FireAllClients("PlaySound", Vector3.new(-25, 79.01, 10.554), ReplicatedStorage.Assets.Weapons.M4A1.Sounds.Shoot)
-
-            Event:FireAllClients(
-                "FireProjectile", 
-                workspace.Ignore, 
-                ReplicatedStorage.Assets.Weapons.M4A1, 
-                Vector3.new(-25, 79.01, 10.554), 
-                Vector3.new(1, 0, 0)
-            )
-        end
-    end)
+    --task.spawn(function()
+    --    while task.wait(1) do
+    --        Event:FireAllClients("PlaySound", Vector3.new(-25, 79.01, 10.554), ReplicatedStorage.Assets.Weapons.M4A1.Sounds.Shoot)
+--
+    --        Event:FireAllClients(
+    --            "FireProjectile", 
+    --            workspace.Ignore, 
+    --            ReplicatedStorage.Assets.Weapons.M4A1, 
+    --            Vector3.new(-25, 79.01, 10.554), 
+    --            Vector3.new(1, 0, 0)
+    --        )
+    --    end
+    --end)
 end
 
 function Controller.PlayerAdded(Player: Player)
@@ -62,7 +62,9 @@ function Controller.CharacterAdded(Character, Player)
         end
         if not Accessory:IsA("Accessory") then continue end
 
-        CollectionService:AddTag(Accessory, "Accesory")
+        print("Tagging", Accessory)
+
+        CollectionService:AddTag(Accessory.Handle, "Accessory")
     end
 
     -- add effects

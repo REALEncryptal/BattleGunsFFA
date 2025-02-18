@@ -59,13 +59,6 @@ function ProjectileWeapon:FunctionalValidateHit(RaycastResult:RaycastResult)
             warn("[FireProjectile] Server rejected hit")
         end
     end)
-
-
-    -- DONE this is when the client hit something so call RaycastWeapon on event
-    -- DONE then implement the firing. the client needs to use fast cast
-    -- then u need to tell the server about the shot
-    -- the server then needs to validate it and tell other
-    -- clients to replicate the shot and then put any hit effects.
 end
 
 function ProjectileWeapon:FunctionalFire(Origin:Vector3, SpreadDirection:Vector3, Params:RaycastParams)
@@ -75,7 +68,12 @@ function ProjectileWeapon:FunctionalFire(Origin:Vector3, SpreadDirection:Vector3
     -- move the bullet forward a little
     offset += self.Weapon.PrimaryPart.Tip.WorldCFrame.LookVector * 5
 
-    self.Caster:Fire(Origin, SpreadDirection, self.Config.BulletVelocity or shared.Import("Constants").BULLET_SPEED, offset, self.CastBehaviour)
+    -- speed
+    local speed = self.Config.BulletVelocity or shared.Import("Constants").BULLET_SPEED
+    speed *= math.random(90, 110) / 100
+
+
+    self.Caster:Fire(Origin, SpreadDirection, speed, offset, self.CastBehaviour)
 
     -- tell server to replicate the shot visually
     shared.Import("Event"):FireServer("FireProjectile", self.OriginalWeapon, Origin, SpreadDirection)

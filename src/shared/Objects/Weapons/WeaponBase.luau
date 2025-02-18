@@ -28,9 +28,11 @@ function WeaponObject.new(Weapon)
         Sway = Spring3.new(),
         Tilt = Spring3.new(), -- tilt when moving left/right
         Move = Spring3.new(5,50,6,6), -- walk bob  mass force damping speed
+        Offset = Spring3.new(), -- viewmodel offset
         Recoil = Spring3.new(6,50,2,7), -- golden values
         WeaponRecoil = Spring3.new(6,50,2,7), -- golden values
-        Impact = Spring3.new() -- when hitting the ground
+        Impact = Spring3.new(), -- when hitting the ground
+        Camera = Spring3.new() -- camera offset
     }
 
     self.Offsets = {
@@ -45,6 +47,40 @@ function WeaponObject.new(Weapon)
 
     -- load animations
     self:LoadAnimations()
+
+    -- events
+    local MovementController = shared.Import("MovementController")
+    self.Trove:Add(MovementController.WallSlide:Connect(function(Start) 
+        self.Springs.Impact:Shove(Vector3.new(0,-.5,0) * self.DeltaTime)
+
+        if Start then
+            ReplicatedStorage.Assets.SFX.Slide.Playing = true
+        else
+            ReplicatedStorage.Assets.SFX.Slide.Playing = false
+        end
+    end))
+
+    self.Trove:Add(MovementController.WallJump:Connect(function()
+        shared.Import("PlaySound")(ReplicatedStorage.Assets.SFX.Jump)
+    end))
+
+    self.Trove:Add(MovementController.WallDismount:Connect(function()
+        shared.Import("PlaySound")(ReplicatedStorage.Assets.SFX.Dismount)
+    end))
+
+    self.Trove:Add(MovementController.Slide:Connect(function(sliding)
+        shared.Import("Event"):FireServer("Slide", sliding)
+        
+        self.Sliding = sliding
+
+        if self.Sliding then
+            shared.Import("PlaySound")(ReplicatedStorage.Assets.SFX.WoodSlide)
+            self.Animations.ArmOff:Play()
+        else
+            shared.Import("PlaySound")(ReplicatedStorage.Assets.SFX.Jump)
+            self.Animations.ArmOff:Stop()
+        end
+    end))
 
     return self
 end
@@ -73,7 +109,17 @@ function WeaponObject:LoadAnimations()
 
     self.Animations = {}
 
+    local AnimationsToLoad = {}
+
     for Name, AnimationId in pairs(self.Config.Animations) do
+        AnimationsToLoad[Name] = AnimationId
+    end
+
+    for Name, AnimationId in pairs(shared.Import("DefaultAnimations")) do
+        AnimationsToLoad[Name] = AnimationId
+    end
+
+    for Name, AnimationId in pairs(AnimationsToLoad) do
         local Animation = Instance.new("Animation")
         Animation.AnimationId = AnimationId
 
@@ -119,9 +165,9 @@ function WeaponObject:Update(DeltaTime): boolean
     -- calculate move
     local Moving = shared.Import("CharacterController"):IsCharacterMoving(Character)
     local WasGrounded = self.Grounded
-    self.Grounded =Character.HumanoidRootPart.GroundSensor.SensedPart
+    self.Grounded =Character.Humanoid.FloorMaterial ~= Enum.Material.Air
 
-    if Moving and self.Grounded then
+    if Moving and self.Grounded and not self.Sliding then
         self.Springs.Move:Shove(Vector3.new(
             math.cos(tick()*12)*.15,
             math.sin(tick()*12*2)*.15-.2,
@@ -135,6 +181,10 @@ function WeaponObject:Update(DeltaTime): boolean
     
     local TiltAmount = CameraCFrame:VectorToObjectSpace(Character.Humanoid.MoveDirection).Unit.X
 
+    if self.Sliding then
+        TiltAmount = -2
+    end
+
     -- fix nan
     if TiltAmount ~= TiltAmount then
         TiltAmount = 0
@@ -144,6 +194,12 @@ function WeaponObject:Update(DeltaTime): boolean
 
     if self.Grounded and not WasGrounded and Character.HumanoidRootPart.AssemblyLinearVelocity.Y < -10 then
         self.Springs.Impact:Shove(Vector3.new(0,-1,0) * self.DeltaTime)
+    end
+
+    -- sliding effects
+    if self.Sliding then
+        self.Springs.Camera:Shove(Vector3.new(0,-.75,0) * self.DeltaTime)
+        self.Springs.Offset:Shove(Vector3.new(-.3,-.2,0)*self.DeltaTime)
     end
 
     -- add offsets
@@ -163,6 +219,7 @@ function WeaponObject:Update(DeltaTime): boolean
         + UpdatedSprings.Move 
         + UpdatedSprings.Impact
         + UpdatedSprings.Tilt/20
+        + UpdatedSprings.Offset
 
     SpringFinal = CFrame.new(SpringFinal) 
         * CFrame.Angles(math.rad(UpdatedSprings.Sway.Y*-20), math.rad(UpdatedSprings.Sway.X*10), 0)
@@ -172,7 +229,8 @@ function WeaponObject:Update(DeltaTime): boolean
 
     -- camera
     CameraCFrame *= 
-    self:FunctionalUpdateCamera(UpdatedSprings, DeltaTime) 
+    CFrame.new(UpdatedSprings.Camera)
+    * self:FunctionalUpdateCamera(UpdatedSprings, DeltaTime) 
     --* CFrame.Angles(math.rad(UpdatedSprings.Move.Y*10),math.rad(UpdatedSprings.Move.X*10),0)
 
     -- set viewmodel pos

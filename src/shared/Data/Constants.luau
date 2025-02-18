@@ -43,7 +43,10 @@ local Constants = {
 
     -- MOVEMENT
     GRAVITY = 70,
-    SPEED = 20,
+    SPEED = 25,
+    SLIDE_SPEED = 35,
+    SLIDE_TIME = 2,
+    SLIDE_COOLDOWN = .5,
     JUMP = 380,
     AUTO_JUMP = false, -- bhop style
     JUMPS = 1, -- how many jumps can be done withtout touching the ground

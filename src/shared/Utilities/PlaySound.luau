@@ -34,4 +34,6 @@ return function (Sound: Sound, Position: Vector3)
     Sound.TimePosition = StartTime
 
     Sound:Play()
+
+    return Sound
 end
