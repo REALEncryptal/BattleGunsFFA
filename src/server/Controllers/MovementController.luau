@@ -21,13 +21,7 @@ function Controller.PlayerAdded(Player:Player)
     Player.CharacterAdded:Connect(Controller.CharacterAdded)
 end
 
-function Controller.CharacterAdded(Character)
-    local Humanoid = Character:WaitForChild("Humanoid")
-    Humanoid.WalkSpeed = Constants.SPEED
-    Humanoid.JumpPower = Constants.JUMP
-
-    -- old controller
-    if true then return end -- disable for now
+function Controller:SetupPhysics(Character)
     if Character:FindFirstChild("ControllerManager") then return end
     local Manager = Instance.new("ControllerManager")
     local GroundController = Instance.new("GroundController", Manager)
@@ -80,6 +74,12 @@ function Controller.CharacterAdded(Character)
     local ColliderMaterial = PhysicalProperties.new(.7, 0, 0, 100, 100)
     Character.Head.CustomPhysicalProperties = ColliderMaterial
     Character.Torso.CustomPhysicalProperties = ColliderMaterial
+end
+
+function Controller.CharacterAdded(Character)
+    local Humanoid = Character:WaitForChild("Humanoid")
+    Humanoid.WalkSpeed = Constants.SPEED
+    Humanoid.JumpPower = Constants.JUMP
 end
 
 return Controller

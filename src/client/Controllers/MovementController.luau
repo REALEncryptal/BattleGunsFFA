@@ -340,6 +340,7 @@ end
 
 function Controller.Update(DT)
     if not Controller.Humanoid then return end
+    if Controller.Humanoid.Health <= 0 then return end
 
     local Grounded = Controller.Humanoid.FloorMaterial ~= Enum.Material.Air
     local MoveDirection = Controller.Humanoid.MoveDirection

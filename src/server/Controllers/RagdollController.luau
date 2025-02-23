@@ -19,9 +19,10 @@ local ragdollInstanceNames = {
 	["ColliderPart"] = true,
 }
 
-local CharacterController
+local CharacterController, MovementController
 function Controller:Init()
     CharacterController = shared.Import "CharacterController"
+    MovementController = shared.Import "MovementController"
 end
 
 function Controller.PlayerAdded(Player: Player)
@@ -30,8 +31,7 @@ end
 
 function Controller.CharacterAdded(Character)
     CharacterController:GetSignals(Character).Died:Connect(function()
-        if not Character:FindFirstChild("ControllerManager") then return end
-        Character:FindFirstChild("ControllerManager"):Destroy()
+        MovementController:SetupPhysics(Character)
         Controller:Ragdoll(Character)
     end)
 end
@@ -97,9 +97,23 @@ function Controller:Ragdoll(Character)
         Constraint.Parent = Motor6D.Parent
     end
     
+    Character.Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
     Character.Humanoid.AutoRotate = false
 
     local Root: BasePart = Character:FindFirstChild("HumanoidRootPart")
+
+    local WeaponMotor = Character:FindFirstChild("Right Arm"):FindFirstChild("WeaponMotor")
+    if WeaponMotor then
+        WeaponMotor:Destroy()
+    end
+
+    local Weapon = Character:FindFirstChild("Weapon")
+    if Weapon then
+        for _, v in ipairs(Weapon:GetChildren()) do
+            if not v:IsA("BasePart") then continue end
+            v.CanCollide = true
+        end
+    end
 
     ReplicatedStorage.Assets.VFX.Trail:Clone().Parent = Root
 end

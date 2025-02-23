@@ -43,11 +43,16 @@ function Controller:Init()
     Controller.Enabled = true
     Controller.CrosshairSpring = Spring3.new(3, 50, 4, 10)
     Controller.DefaultSpringData = {3, 50, 4, 10}
+    Controller.DamageIndicators = {}
     --mass, force, damping, speed
     -- 5     50     4        4
 
     Event:Listen("Kill", function(Player:Player)
         Controller:KillResult(Player)
+    end)
+
+    Event:Listen("Hit", function(Attacker:Player, IsHeadShot)
+        Controller:DamageIndicator(Attacker.Character.PrimaryPart.Position)
     end)
 
     -- Setup Frames
@@ -68,6 +73,42 @@ function Controller:Init()
     local GameState = Event:InvokeServer("GameState")
     if GameState.State == "MapVote" then
         Controller:StartVote(GameState.Maps, GameState.StartTime)
+    end
+end
+
+-- damage indicator
+function Controller:DamageIndicator(Position:Vector3)
+    local Indicator = ReplicatedStorage.Assets.Interface.Indicator:Clone()
+    Indicator.Parent = Controller.Gui.DamageIndicators
+
+    table.insert(Controller.DamageIndicators, {Position, Indicator})
+    task.spawn(function()
+        task.wait(5)
+        TweenService:Create(Indicator.ImageLabel, TweenInfo.new(.5, Enum.EasingStyle.Quad), {ImageTransparency = 1}):Play()
+        task.wait(.5)
+        Indicator:Destroy()
+
+    end)
+end
+
+function Controller:UpdateDamageIndicators()
+    local myPosition = game.Players.LocalPlayer.Character.PrimaryPart.Position
+
+    for i, Data in ipairs(Controller.DamageIndicators) do
+        if not Data[2] then
+            table.remove(Controller.DamageIndicators, i)
+            continue
+        end
+
+        local Position = Data[1]
+        local Indicator = Data[2]
+
+	    local camCFrame = workspace.Camera.CFrame
+	    local enemyPosition = Position
+	    local flatCFrame = CFrame.lookAt(myPosition, myPosition + camCFrame.LookVector * Vector3.new(1, 0, 1)) 
+	    local travel = flatCFrame:Inverse() * enemyPosition 
+	    local rot = math.atan2(travel.Z, travel.X)
+	    Indicator.Rotation = math.deg(rot) + 90
     end
 end
 
@@ -802,6 +843,9 @@ function Controller.Update(DT)
     if Controller.Crosshair then
         Controller:UpdateCrosshair(DT)
     end
+
+    -- update damage indicators
+    Controller:UpdateDamageIndicators()
 end
 
 return Controller

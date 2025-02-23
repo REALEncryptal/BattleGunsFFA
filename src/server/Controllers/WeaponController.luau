@@ -10,9 +10,21 @@ function Controller:Init()
     CharacterController = shared.Import "CharacterController"
     KillEffectController = shared.Import "KillEffectController"
 
+    Controller.PlayerAnimations = {}
+
     Event:Listen("FireProjectile", Controller.FireProjectile) -- replicate fast cast shots to other clients
     Event:Listen("RaycastWeapon", Controller.RaycastWeapon)-- for raycasting
     Event:Listen("SelectWeapon", Controller.SelectWeapon)
+
+    Event:Listen("AnimationState", function(Player, State)
+        if not Controller.PlayerAnimations[Player] then return end
+
+        if State == "Slide" then
+            Controller.PlayerAnimations[Player].Slide:Play()
+        else
+            Controller.PlayerAnimations[Player].Slide:Stop()
+        end
+    end)
 
     workspace.Camera.FieldOfView = Constants.DEFAULT_FOV
 
@@ -90,6 +102,13 @@ function Controller.CharacterAdded(Character, Player)
         Event:FireClient(Killer, "Kill", Player or Character)
         KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"), Character, Killer, Character.PrimaryPart.CFrame)
     end)
+
+    -- add animatoins
+    Controller.PlayerAnimations[Player] = {}
+
+    local SlideAnimation = Instance.new("Animation")
+    SlideAnimation.AnimationId = "rbxassetid://105890090004509"
+    Controller.PlayerAnimations[Player].Slide = Character:WaitForChild("Humanoid"):WaitForChild("Animator"):LoadAnimation(SlideAnimation)
 end
 
 -- Weapon selection for client
@@ -190,12 +209,14 @@ function Controller:EquipWeapon(Player, Weapon)
     if not Character then return end
     
     local WeaponModel = Weapon:Clone()
+    WeaponModel.Name = "Weapon"
     WeaponModel.Parent = Character
 
     local Motor6D = Instance.new("Motor6D")
     Motor6D.Part0 = Character:WaitForChild("Right Arm")
     Motor6D.Part1 = WeaponModel:WaitForChild("Handle")
 
+    Motor6D.Name = "WeaponMotor"
     Motor6D.Parent = Character:FindFirstChild("Right Arm")
 
     -- Create tags for raycasting
@@ -239,6 +260,11 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
         Instance:SetAttribute("Health", Health)
     else
         Instance.Humanoid.Health = Instance.Humanoid.Health - Damage
+    end
+
+    local Victim = game.Players:GetPlayerFromCharacter(Instance)
+    if Victim then
+        Event:FireClient(Victim, "Hit", Player, IsHeadShot)
     end
     
     Instance:SetAttribute("LastHit", tick())

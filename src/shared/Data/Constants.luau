@@ -4,6 +4,7 @@ local Constants = {
     DEBUG = true,
     LOOP = true, -- run the game loop
     SHOW_CASTS = false, -- show debug casts
+    SHOW_SOUNDS = true, -- show where sounds are coming from and what they are
     DATASAVE = false, -- toggles player data load and save 
 
     -- WEAPON
@@ -60,7 +61,7 @@ local Constants = {
 
     -- CHARACTER
     HEALTH = 100,
-    RESPAWN_TIME = 3,
+    RESPAWN_TIME = 5,
 
     -- GAMEPASSES
     

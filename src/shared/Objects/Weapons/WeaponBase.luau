@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 
 local WeaponObject = {}
@@ -40,7 +41,12 @@ function WeaponObject.new(Weapon)
     }
 
     -- apply humanoid description
-    self.Viewmodel.Humanoid:ApplyDescription(game.Players:GetHumanoidDescriptionFromUserId(game.Players.LocalPlayer.UserId))
+    pcall(function()
+        local Description = game.Players:GetHumanoidDescriptionFromUserId(game.Players.LocalPlayer.UserId)
+        if Description then
+            self.Viewmodel.Humanoid:ApplyDescription(Description)
+        end
+    end)
 
     -- rig weapon
     self:Rig()
@@ -69,7 +75,7 @@ function WeaponObject.new(Weapon)
     end))
 
     self.Trove:Add(MovementController.Slide:Connect(function(sliding)
-        shared.Import("Event"):FireServer("Slide", sliding)
+        shared.Import("Event"):FireServer("AnimationState", sliding and "Slide" or "Idle")
         
         self.Sliding = sliding
 

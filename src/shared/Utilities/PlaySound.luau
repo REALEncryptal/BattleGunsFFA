@@ -16,7 +16,7 @@ return function (Sound: Sound, Position: Vector3)
         SoundPart.Transparency = 1
         SoundPart.Parent = workspace.Ignore
 
-        if shared.Import("Constants").DEBUG then
+        if shared.Import("Constants").DEBUG and shared.Import("Constants").SHOW_SOUNDS then
             local DebugGui = ReplicatedStorage.Assets.AudioDebug:Clone()
             DebugGui.Parent = SoundPart
 

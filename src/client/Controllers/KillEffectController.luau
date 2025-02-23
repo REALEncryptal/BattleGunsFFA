@@ -12,7 +12,9 @@ end
 function Controller.KillEffect(KillEffect:ModuleScript, Character:Model, Killer:Player, CFrameBeforeDeath: CFrame)
     local RunFunction = require(KillEffect)
 
-    SoundService:PlayLocalSound(ReplicatedStorage.Assets.SFX.Kill)
+    if Killer == game.Players.LocalPlayer then
+        SoundService:PlayLocalSound(ReplicatedStorage.Assets.SFX.Kill)
+    end
 
     RunFunction(Character, Killer, CFrameBeforeDeath)
 end
