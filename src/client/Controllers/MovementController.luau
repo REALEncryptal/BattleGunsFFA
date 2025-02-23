@@ -91,7 +91,7 @@ function Controller:GetWallCast(Offset,Layers)
                 end
             end
 
-            Controller:DebugRay((y*10*360)+i,O, if Result then Result.Position else O+Direction, C)
+            --Controller:DebugRay((y*10*360)+i,O, if Result then Result.Position else O+Direction, C)
 
             if Result then
                 local Dist = (O - Result.Position).Magnitude
@@ -117,7 +117,7 @@ function Controller:LineCast(Start, End, Rays, Direction, Params): RaycastResult
         local Result:RaycastResult = workspace:Raycast(O, Direction, Params)
 
         --
-        Controller:DebugRay(i+100000,O, if Result then Result.Position else O+Direction, if Result then Color3.new(1, 0, 0.882352) else Color3.new(1, 0.682352, 0.290196))
+        --Controller:DebugRay(i+100000,O, if Result then Result.Position else O+Direction, if Result then Color3.new(1, 0, 0.882352) else Color3.new(1, 0.682352, 0.290196))
 
         --
         if Result then
@@ -141,7 +141,7 @@ function Controller:CanVault():boolean
     local HeadOffset = Vector3.yAxis * .5
 
     -- Can our head fit?
-    local HeadResult:RaycastResult|nil = Controller:LineCast(Head.Position-HeadOffset*2, Head.Position+HeadOffset, 10, Direction * 2, Params)
+    local HeadResult:RaycastResult|nil = Controller:LineCast(Head.Position+Vector3.yAxis, Head.Position+Vector3.yAxis, 1, Direction * 2, Params)
 
     -- Is our torso touching the wall
     local TorsoResult:RaycastResult|nil = Controller:LineCast(RootPart.Position-TorsoOffset, RootPart.Position+TorsoOffset, 10, Direction * 2, Params)
@@ -178,13 +178,27 @@ function Controller:WallJumpWallSlide(Grounded, WishJump)
                     .1
                 )
 
-                local HRP = Controller.Humanoid.Parent.HumanoidRootPart
-                HRP.Anchored = true
-                TweenService:Create(
-                    HRP,
-                    TweenInfo.new(.2),
-                    {Position = HRP.Position + HRP.CFrame.LookVector * 5 + Vector3.new(0,5,0)}
-                ):Play()
+
+                local RootPart:Part = Controller.Humanoid.Parent.HumanoidRootPart
+                local InitalVelocity = RootPart.AssemblyLinearVelocity
+                local Direction = RootPart.CFrame.LookVector
+                local Params = Controller:GetParams()
+                local TorsoOffset = Vector3.yAxis
+                local TorsoResult:RaycastResult|nil = Controller:LineCast(RootPart.Position-TorsoOffset, RootPart.Position+TorsoOffset, 10, Direction * 2, Params)
+
+                local Normal = TorsoResult.Normal
+                Direction = Normal * -1
+                local NewCFrame = CFrame.new(RootPart.Position + Direction * 6 + Vector3.new(0, 5, 0))
+                local Info = TweenInfo.new(.3, Enum.EasingStyle.Linear)
+                local Tween = TweenService:Create(RootPart, Info, {CFrame = NewCFrame})
+                Tween.Completed:Connect(function()
+                    local Direction = workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
+                    Direction = Direction.Unit
+                    local Velocity = Direction * 30 + Vector3.yAxis * 10 + InitalVelocity
+                    RootPart.AssemblyLinearVelocity = Velocity*.6
+                    Controller:ApplyVelocity(Velocity, .1)
+                end)
+                Tween:Play()
 
             elseif  WishJump and not Controller.WasWishJump and Controller.WallJumps > 0 then
                 Controller.WallJump:Fire()

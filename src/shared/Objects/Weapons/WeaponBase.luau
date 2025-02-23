@@ -82,6 +82,14 @@ function WeaponObject.new(Weapon)
         end
     end))
 
+    self.Trove:Add(MovementController.Vault:Connect(function()
+        self.Animations.ArmOff:Play()
+        shared.Import("PlaySound")(ReplicatedStorage.Assets.SFX.Vault)
+        self.Springs.Impact:Shove(Vector3.new(0,-2,0) * self.DeltaTime)
+        task.wait(.35)
+        self.Animations.ArmOff:Stop()
+    end))
+
     return self
 end
 
