@@ -1,4 +1,6 @@
 local ContextActionService = game:GetService("ContextActionService")
+local Debris = game:GetService("Debris")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Controller = {}
 
@@ -10,6 +12,7 @@ function Controller:PreInit()
     Controller.WallSlide = Signal.new()
     Controller.WallDismount = Signal.new()
     Controller.Slide = Signal.new()
+    Controller.Vault = Signal.new()
 end
 
 function Controller:Init()
@@ -59,10 +62,16 @@ function Controller:ClearDebugRays()
     Controller.DebugRays = {}
 end
 
-function Controller:GetWallCast(Offset,Layers)
+function Controller:GetParams():RaycastParams
     local Params = RaycastParams.new()
     Params.FilterType = Enum.RaycastFilterType.Blacklist
     Params.FilterDescendantsInstances = {workspace.Ignore, Controller.Humanoid.Parent, workspace.CurrentCamera}
+
+    return Params
+end
+
+function Controller:GetWallCast(Offset,Layers)
+    local Params = Controller:GetParams()
 
     -- 360 degree wall check
     local Closest:{dist:number, result:RaycastResult} = {dist = math.huge, result = nil}
@@ -97,6 +106,60 @@ function Controller:GetWallCast(Offset,Layers)
     return Closest.result
 end
 
+function Controller:LineCast(Start, End, Rays, Direction, Params): RaycastResult|nil
+    local Origin = Start
+    local Closest:{dist:number, result:RaycastResult} = {dist = math.huge, result = nil}
+
+    for i = 0, Rays, 1 do
+        -- interpolate between the start and end
+        local O = Origin + (End - Origin) * (i / Rays)
+        --
+        local Result:RaycastResult = workspace:Raycast(O, Direction, Params)
+
+        --
+        Controller:DebugRay(i+100000,O, if Result then Result.Position else O+Direction, if Result then Color3.new(1, 0, 0.882352) else Color3.new(1, 0.682352, 0.290196))
+
+        --
+        if Result then
+            local Dist = (O - Result.Position).Magnitude
+            if Dist < Closest.dist then
+                Closest.dist = Dist
+                Closest.result = Result
+            end
+        end
+    end
+
+    return Closest.result
+end
+
+function Controller:CanVault():boolean
+    local RootPart:Part = Controller.Humanoid.Parent.HumanoidRootPart
+    local Head:Part = Controller.Humanoid.Parent.Head
+    local Direction = RootPart.CFrame.LookVector
+    local Params = Controller:GetParams()
+    local TorsoOffset = Vector3.yAxis
+    local HeadOffset = Vector3.yAxis * .5
+
+    -- Can our head fit?
+    local HeadResult:RaycastResult|nil = Controller:LineCast(Head.Position-HeadOffset*2, Head.Position+HeadOffset, 10, Direction * 2, Params)
+
+    -- Is our torso touching the wall
+    local TorsoResult:RaycastResult|nil = Controller:LineCast(RootPart.Position-TorsoOffset, RootPart.Position+TorsoOffset, 10, Direction * 2, Params)
+    return not HeadResult and TorsoResult
+end
+
+function Controller:ApplyVelocity(Velocity:Vector3, TimeLength:number): LinearVelocity
+    local LV = Instance.new("LinearVelocity")
+    LV.Name = "Velocity"
+    LV.Attachment0 = Controller.Humanoid.Parent.HumanoidRootPart.RootAttachment
+    LV.ForceLimitsEnabled = false
+    LV.VectorVelocity = Velocity
+    LV.Parent = Controller.Humanoid.Parent.HumanoidRootPart
+    Debris:AddItem(LV, TimeLength)
+    
+    return LV
+end
+
 function Controller:WallJumpWallSlide(Grounded, WishJump)
     local WasSliding = Controller.WallSliding
     Controller.WallSliding = false
@@ -104,43 +167,49 @@ function Controller:WallJumpWallSlide(Grounded, WishJump)
     if not Grounded then
         local Result:RaycastResult = Controller:GetWallCast(1, 4)
 
-        if Result then
-            if Result.Distance <= 1.5 and WishJump and not Controller.WasWishJump and Controller.WallJumps > 0 then
+        if Result and Result.Distance <= 1.5  then
+            local CanVault = Controller:CanVault()
+
+            if WishJump and not Controller.WasWishJump and CanVault then
+                -- vault
+                Controller.Vault:Fire()
+                Controller:ApplyVelocity(
+                    Vector3.yAxis * 30, 
+                    .1
+                )
+
+                local HRP = Controller.Humanoid.Parent.HumanoidRootPart
+                HRP.Anchored = true
+                TweenService:Create(
+                    HRP,
+                    TweenInfo.new(.2),
+                    {Position = HRP.Position + HRP.CFrame.LookVector * 5 + Vector3.new(0,5,0)}
+                ):Play()
+
+            elseif  WishJump and not Controller.WasWishJump and Controller.WallJumps > 0 then
                 Controller.WallJump:Fire()
                 Controller.WallJumps-=1
 
                 local v = Vector3.yAxis * 30 + Result.Normal * 20
-                -- add the current velocity of the player
-                v = v + Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity* 1.4 * Vector3.new(1,0,1)
+                v = v + Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity* 1.4 * Vector3.new(1,0,1) 
 
-
-                local LV = Instance.new("LinearVelocity")
-                LV.Name = "BOOST"
-                LV.Attachment0 = Controller.Humanoid.Parent.HumanoidRootPart.RootAttachment
-                LV.ForceLimitsEnabled = false
-                LV.VectorVelocity = v
-                LV.Parent = Controller.Humanoid.Parent.HumanoidRootPart
-                game.Debris:AddItem(LV, .1)--lifespan = 0.5
+                Controller:ApplyVelocity(v, .1)
+                
                 Controller.WallJumpStart = nil
-            elseif WishJump and not Controller.WasWishJump and Result.Distance <= 1.5 then
+            elseif WishJump and not Controller.WasWishJump then
                 -- jump off wall slide
                 Controller.WallDismount:Fire()
                 Controller.WallJumps = -1
-                local LV = Instance.new("LinearVelocity")
-                LV.Name = "BOOST"
-                LV.Attachment0 = Controller.Humanoid.Parent.HumanoidRootPart.RootAttachment
-                LV.ForceLimitsEnabled = false
-                LV.VectorVelocity = Result.Normal * 20 + Vector3.yAxis * -30
-                LV.Parent = Controller.Humanoid.Parent.HumanoidRootPart
-                game.Debris:AddItem(LV, .1)--lifespan = 0.5
-                
-            elseif  Result.Distance <= 1.5 and Controller.WallJumps >= 0 then
+
+                Controller:ApplyVelocity(Result.Normal * 20 + Vector3.yAxis * -30, .1)
+
+            elseif Controller.WallJumps >= 0 then
                 
                 if not Controller.WallJumpStart then
                     Controller.WallJumpStart = tick()
                 end
 
-                if tick()-Controller.WallJumpStart <= 2 then
+                if tick()-Controller.WallJumpStart <= 2 and not Controller.WishSlide then
                     Controller.WallSliding = true
                     local v = Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity
                     Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(
@@ -212,7 +281,7 @@ function Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
         Controller.Humanoid.WalkSpeed = Controller.SlideSpeed
 
         -- bounces
-        local Cast:RaycastResult = Controller:GetWallCast(2,2)
+        local Cast:RaycastResult = Controller:GetWallCast(2,3)
 
         if Cast and Cast.Distance < 1.5 then
             -- reflect the player

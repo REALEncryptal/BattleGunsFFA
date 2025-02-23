@@ -62,8 +62,6 @@ function Controller.CharacterAdded(Character, Player)
         end
         if not Accessory:IsA("Accessory") then continue end
 
-        print("Tagging", Accessory)
-
         CollectionService:AddTag(Accessory.Handle, "Accessory")
     end
 
