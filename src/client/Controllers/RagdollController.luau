@@ -15,7 +15,7 @@ end
 function Controller._CharacterAdded(Character)
     Controller.Loaded = true
     local LocalPlayer = game.Players.LocalPlayer
-   -- LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
+   LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
 
     UserInputService.MouseIconEnabled = if WeaponController.Enabled then false else true
     CharacterController:GetSignals(Character).Died:Connect(function()

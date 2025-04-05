@@ -339,6 +339,7 @@ function Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
 end
 
 function Controller.Update(DT)
+    if not game.Players.LocalPlayer.Character then return end
     if not Controller.Humanoid then return end
     if Controller.Humanoid.Health <= 0 then return end
 

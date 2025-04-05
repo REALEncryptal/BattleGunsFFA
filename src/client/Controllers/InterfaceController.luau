@@ -6,6 +6,7 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Controller = {}
 
@@ -67,6 +68,7 @@ function Controller:Init()
     Controller:SetupMoney()
     Controller:SetupUiScale()
     Controller:SetupGameState()
+    Controller:SetupKillStreak()
     
 
     -- Check if we joined during a map vote
@@ -74,6 +76,77 @@ function Controller:Init()
     if GameState.State == "MapVote" then
         Controller:StartVote(GameState.Maps, GameState.StartTime)
     end
+end
+
+-- kill streaks
+function Controller:SetupKillStreak()
+    Controller.KillStreakLeader = Controller:GetKillStreakLeader()
+
+    local function ListenToPlayer(Player)
+        Player:GetAttributeChangedSignal("KillStreak"):Connect(function()
+            print("Kill streak changed")
+            Controller.KillStreakLeader = Controller:GetKillStreakLeader()
+            Controller:UpdateKillStreak()
+        end)
+    end
+
+    -- create tweens
+    Controller.StreakTweenIn = TweenService:Create(Controller.Gui.GoldenVignette, TweenInfo.new(1, Enum.EasingStyle.Quad), {ImageTransparency = .5})
+    Controller.StreakTweenOut = TweenService:Create(Controller.Gui.GoldenVignette, TweenInfo.new(1, Enum.EasingStyle.Quad), {ImageTransparency = 1})
+
+    -- listen for kill streak updates
+    Players.PlayerAdded:Connect(function(Player:Player)
+        ListenToPlayer(Player)
+    end)
+
+    for _, Player:Player in ipairs(Players:GetPlayers()) do
+        ListenToPlayer(Player)
+    end
+    Controller:UpdateKillStreak()
+end
+
+function Controller:UpdateKillStreak()
+    local Kills = Controller.KillStreakLeader:GetAttribute("KillStreak")
+
+    if Kills <= Constants.MIN_KILLSTREAK then
+        Controller.Gui.KillStreakLeader.Text = ""
+        Controller.StreakTweenOut:Play()
+        return
+    end
+
+    if Controller.KillStreakLeader == Players.LocalPlayer then
+        Controller.StreakTweenIn:Play()
+    else
+        Controller.StreakTweenOut:Play()
+    end
+
+    local LeaderName = Controller.KillStreakLeader == Players.LocalPlayer and "You are" or Controller.KillStreakLeader.Name.." is"
+
+    Controller.Gui.KillStreakLeader.Text = "👑 "..LeaderName.." on a "..Kills.." kill streak 👑"
+
+    Controller.KillStreakLeader.Character:FindFirstChild("Highlight").OutlineColor = Constants.KILL_STREAK_LEADER_OUTLINE
+end
+
+function Controller:GetKillStreakLeader():Player
+    local OldLeader = Controller.KillStreakLeader
+
+    local Leader = nil
+    local MaxStreak = -1
+
+    for _, Player:Player in ipairs(Players:GetPlayers()) do
+        local Streak = Player:GetAttribute("KillStreak")
+
+        if Streak > MaxStreak then
+            MaxStreak = Streak
+            Leader = Player
+        end
+    end
+
+    if OldLeader and OldLeader ~= Leader then
+        OldLeader.Character:FindFirstChild("Highlight").OutlineColor = Constants.PLAYER_OUTLINE
+    end
+
+    return Leader
 end
 
 -- damage indicator
@@ -93,6 +166,10 @@ end
 
 function Controller:UpdateDamageIndicators()
     local myPosition = game.Players.LocalPlayer.Character.PrimaryPart.Position
+
+    if not myPosition then
+        return
+    end
 
     for i, Data in ipairs(Controller.DamageIndicators) do
         if not Data[2] then

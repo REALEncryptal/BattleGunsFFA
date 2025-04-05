@@ -48,6 +48,8 @@ function Controller.PlayerAdded(Player: Player)
         Controller.CharacterAdded(Player.Character, Player)
     end)
 
+    Player:SetAttribute("Kills", 0)
+    Player:SetAttribute("KillStreak", 0)
     Player:SetAttribute("EquippedWeapon", "Random")
 end
 
@@ -79,12 +81,19 @@ function Controller.CharacterAdded(Character, Player)
 
     -- add effects
     ReplicatedStorage.Assets.VFX.Blood:Clone().Parent = Character.HumanoidRootPart
+    ReplicatedStorage.Assets.Highlight.OutlineColor = Constants.PLAYER_OUTLINE
     ReplicatedStorage.Assets.Highlight:Clone().Parent = Character
 
     -- Kill event for players and bots
     local Signal = if Player then CharacterController:GetSignals(Character).Died else Character:FindFirstChild("Humanoid").Died
 
     Signal:Connect(function()
+         -- remove killstreak
+         if Player then
+            Player:SetAttribute("KillStreak", 0)
+        end
+
+        -- has a killer only
         if not Character:GetAttribute("LastHitBy") then return end
 
         local Killer = game.Players:GetPlayerByUserId(Character:GetAttribute("LastHitBy"))
@@ -93,6 +102,10 @@ function Controller.CharacterAdded(Character, Player)
         if Killer then
             --TODO: BETTER HEADSHOT DETECTION
             Killer.Data:SetAttribute("Kills", Killer.Data:GetAttribute("Kills") + 1)
+
+            -- kill streak
+            Killer:SetAttribute("KillStreak", Killer:GetAttribute("KillStreak") + 1)
+            Killer:SetAttribute("Kills", Killer:GetAttribute("Kills") + 1)
 
             local MoneyReward = Character:GetAttribute("LastHitHeadshot") and Constants.HEAD_KILL_REWARD or Constants.KILL_REWARD
             Killer.Data:SetAttribute("Money", Killer.Data:GetAttribute("Money") + MoneyReward)
@@ -103,12 +116,14 @@ function Controller.CharacterAdded(Character, Player)
         KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"), Character, Killer, Character.PrimaryPart.CFrame)
     end)
 
-    -- add animatoins
-    Controller.PlayerAnimations[Player] = {}
+    if Player then
+        -- add animatoins
+        Controller.PlayerAnimations[Player] = {}
 
-    local SlideAnimation = Instance.new("Animation")
-    SlideAnimation.AnimationId = "rbxassetid://105890090004509"
-    Controller.PlayerAnimations[Player].Slide = Character:WaitForChild("Humanoid"):WaitForChild("Animator"):LoadAnimation(SlideAnimation)
+        local SlideAnimation = Instance.new("Animation")
+        SlideAnimation.AnimationId = "rbxassetid://105890090004509"
+        Controller.PlayerAnimations[Player].Slide = Character:WaitForChild("Humanoid"):WaitForChild("Animator"):LoadAnimation(SlideAnimation)
+    end
 end
 
 -- Weapon selection for client

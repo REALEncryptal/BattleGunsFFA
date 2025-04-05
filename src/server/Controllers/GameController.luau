@@ -139,6 +139,8 @@ Controller.States.GameLoop = {
         })
 
         for _, Player:Player in ipairs(Players:GetPlayers()) do
+            Player:SetAttribute("Kills", 0)
+            Player:SetAttribute("KillStreak", 0)
             Player:LoadCharacter()
         end
     end,
@@ -183,6 +185,12 @@ function Controller:StartMapVote()
     Controller.RandomMaps = {}
 
     for _ = 1, 3 do
+        -- check if there are enough maps
+        if #Maps <= 0 then
+            break
+        end
+
+        -- select a random map
         local RandomMap = Maps[math.random(1, #Maps)]
 
         -- add and remove
@@ -190,8 +198,13 @@ function Controller:StartMapVote()
         table.remove(Maps, table.find(Maps, RandomMap)) -- prevent the same map from being selected
     end
 
-    -- Get a vote from users
-    Event:FireAllClients("MapVote", Controller.RandomMaps)
+    if #Controller.RandomMaps <= 1 then
+        Constants:Debug("[GameController] Skipping map vote -  not enough maps")
+        Controller.StateMachine:SetState("GameLoop", Controller:GetRandomMap())
+    else
+        -- Get a vote from users
+        Event:FireAllClients("MapVote", Controller.RandomMaps)
+    end
 
     -- Store votes
     Controller.Votes = {}

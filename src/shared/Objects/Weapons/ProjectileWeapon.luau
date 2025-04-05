@@ -20,7 +20,8 @@ function ProjectileWeapon.new(Weapon)
     self.CastBehaviour = FastCast.newBehavior()
 
     --
-    self.CastBehaviour.RaycastParams = self:CreateParams()
+    function self:UpdateCastBehaviour() self.CastBehaviour.RaycastParams = self:CreateParams() end
+    self:UpdateCastBehaviour()
     self.CastBehaviour.Acceleration = shared.Import("Constants").BULLET_ACCELERATION
     self.CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers.Physical
     self.CastBehaviour.CosmeticBulletContainer = workspace.Ignore
@@ -45,6 +46,11 @@ function ProjectileWeapon.new(Weapon)
         if cosmeticBullet ~= nil then
             cosmeticBullet:Destroy()
         end
+    end)
+
+    -- game events
+    shared.Import("WeaponController").UpdateParams:Connect(function()
+        self:UpdateCastBehaviour()
     end)
 
     return self

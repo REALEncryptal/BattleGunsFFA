@@ -114,14 +114,16 @@ end
 
 function FirearmBase:CreateParams():RaycastParams
     local Params = RaycastParams.new()
+
+
     Params.FilterDescendantsInstances = {
         self.Viewmodel, 
         game.Players.LocalPlayer.Character, 
         workspace.Debug, 
         workspace.Ignore, 
-        unpack(CollectionService:GetTagged("Accessory")), 
-        unpack(CollectionService:GetTagged("Ignore")),
-        unpack(CollectionService:GetTagged("Weapon"))
+        CollectionService:GetTagged("Accessory"), 
+        CollectionService:GetTagged("Ignore"),
+        CollectionService:GetTagged("Weapon")
     }
     Params.RespectCanCollide = false
     Params.FilterType = Enum.RaycastFilterType.Exclude

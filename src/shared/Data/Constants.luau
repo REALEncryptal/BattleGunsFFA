@@ -11,10 +11,11 @@ local Constants = {
     HITMARK = false, -- debug hitmarks
     BULLET_SPEED = 1000, 
     BULLET_ACCELERATION = -Vector3.yAxis * 50,
+    MIN_KILLSTREAK = 3, -- minimum killstreak to get shown
 
     -- MAPS
-    VOTE_TIME = 20,
-    ROUND_TIME = 60*5,
+    VOTE_TIME = 10,
+    ROUND_TIME = 5000000000000,
 
     -- PROFILE
     PROFILE_TEMPLATE = {
@@ -62,6 +63,8 @@ local Constants = {
     -- CHARACTER
     HEALTH = 100,
     RESPAWN_TIME = 5,
+    PLAYER_OUTLINE = Color3.fromRGB(58, 4, 0),
+    KILL_STREAK_LEADER_OUTLINE = Color3.fromRGB(255, 214, 142),
 
     -- GAMEPASSES
     
