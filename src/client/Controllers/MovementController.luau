@@ -4,7 +4,11 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Controller = {}
 
-local Constants, Signal
+local Constants, Signal, CameraController
+
+local function lerp(a,b,t)
+    return a + (b - a) * t
+end
 
 function Controller:PreInit()
     Signal = shared.Import "Signal"
@@ -17,6 +21,7 @@ end
 
 function Controller:Init()
     Constants = shared.Import "Constants"
+    CameraController = shared.Import "CameraController"
     --
     Controller.Humanoid = nil
 
@@ -24,6 +29,8 @@ function Controller:Init()
     Controller.WallJumps = 2
     Controller.WasWishJump = false
     Controller.LastSlide = tick()
+    Controller.LerpedFov = 0
+    Controller.FOVMod = 7
 
     Controller.WallSliding = false
     Controller.Sliding = false
@@ -91,7 +98,7 @@ function Controller:GetWallCast(Offset,Layers)
                 end
             end
 
-            --Controller:DebugRay((y*10*360)+i,O, if Result then Result.Position else O+Direction, C)
+            if Constants.SHOW_MOVE_CASTS then Controller:DebugRay((y*10*360)+i,O, if Result then Result.Position else O+Direction, C) end
 
             if Result then
                 local Dist = (O - Result.Position).Magnitude
@@ -117,7 +124,7 @@ function Controller:LineCast(Start, End, Rays, Direction, Params): RaycastResult
         local Result:RaycastResult = workspace:Raycast(O, Direction, Params)
 
         --
-        --Controller:DebugRay(i+100000,O, if Result then Result.Position else O+Direction, if Result then Color3.new(1, 0, 0.882352) else Color3.new(1, 0.682352, 0.290196))
+        if Constants.SHOW_MOVE_CASTS then Controller:DebugRay(i+100000,O, if Result then Result.Position else O+Direction, if Result then Color3.new(1, 0, 0.882352) else Color3.new(1, 0.682352, 0.290196)) end
 
         --
         if Result then
@@ -357,6 +364,38 @@ function Controller.Update(DT)
 
     -- slide
     Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
+
+    -- check moving state
+    if MoveDirection.Magnitude > 0 then
+        if MoveDirection ~= LastMoveDirection then
+            --CameraController:GetTween("MOVE_FOV"):Play()
+        end
+    else
+        --CameraController:GetTween("DEFAULT_FOV"):Play()
+    end
+
+    local PlaneVelocity = Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity * Vector3.new(1,0,1)
+    local Speed = PlaneVelocity.Magnitude/Controller.FOVMod
+
+    -- instead of lerp change the lerped by catchup * delta time
+    local Catchup = 100 * DT
+    Speed *= .2
+
+    if Controller.LerpedFov > Speed then
+        Controller.LerpedFov = math.clamp(Controller.LerpedFov - Catchup, Speed, Controller.LerpedFov)
+    elseif Controller.LerpedFov < Speed then
+        Controller.LerpedFov = math.clamp(Controller.LerpedFov + Catchup, 0, Speed)
+    end
+
+    if Controller.Sliding then
+        Controller.FOVMod = 1
+    else
+        Controller.FOVMod = 2
+    end
+
+    print(Controller.LerpedFov)
+
+    CameraController:AddOffset(Controller.LerpedFov)
 
     Controller.LastMoveDirection = Controller.Humanoid.MoveDirection
     Controller.WasWishJump = WishJump

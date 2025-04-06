@@ -1,9 +1,12 @@
+local INF = math.huge
+
 local Constants = {
     -- PLACE
     VERSION = 1,
     DEBUG = true,
     LOOP = true, -- run the game loop
-    SHOW_CASTS = false, -- show debug casts
+    SHOW_CASTS = true, -- show debug casts
+    SHOW_MOVE_CASTS = true, -- show debug move casts
     SHOW_SOUNDS = true, -- show where sounds are coming from and what they are
     DATASAVE = false, -- toggles player data load and save 
 
@@ -11,11 +14,11 @@ local Constants = {
     HITMARK = false, -- debug hitmarks
     BULLET_SPEED = 1000, 
     BULLET_ACCELERATION = -Vector3.yAxis * 50,
-    MIN_KILLSTREAK = 3, -- minimum killstreak to get shown
+    MIN_KILLSTREAK = 2, -- minimum killstreak to get shown
 
     -- MAPS
     VOTE_TIME = 10,
-    ROUND_TIME = 5000000000000,
+    ROUND_TIME = INF,
 
     -- PROFILE
     PROFILE_TEMPLATE = {
@@ -42,6 +45,12 @@ local Constants = {
 
     -- CAMERA
     DEFAULT_FOV = 100,
+    MOVE_FOV = 104,
+    SLIDE_FOV = 110,
+
+    FOV_CHANGE_TIME = 0.15,
+    FOV_CHANGE_EASING = Enum.EasingStyle.Linear,
+    FOV_CHANGE_EASING_DIRECTION = Enum.EasingDirection.In,
 
     -- MOVEMENT
     GRAVITY = 70,

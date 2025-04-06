@@ -26,8 +26,6 @@ function Controller:Init()
         end
     end)
 
-    workspace.Camera.FieldOfView = Constants.DEFAULT_FOV
-
     --task.spawn(function()
     --    while task.wait(1) do
     --        Event:FireAllClients("PlaySound", Vector3.new(-25, 79.01, 10.554), ReplicatedStorage.Assets.Weapons.M4A1.Sounds.Shoot)

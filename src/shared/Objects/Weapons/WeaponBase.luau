@@ -103,6 +103,7 @@ function WeaponObject:Destroy()
     self.Trove:Destroy()
     self.Enabled = false
     self.Destroyed = true
+    ReplicatedStorage.Assets.SFX.Slide.Playing = false
 end
 
 function WeaponObject:Rig()
