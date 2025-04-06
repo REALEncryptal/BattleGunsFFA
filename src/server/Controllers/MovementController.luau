@@ -80,6 +80,7 @@ function Controller.CharacterAdded(Character)
     local Humanoid = Character:WaitForChild("Humanoid")
     Humanoid.WalkSpeed = Constants.SPEED
     Humanoid.JumpPower = Constants.JUMP
+    Humanoid.JumpHeight = Constants.JUMP_HEIGHT
 end
 
 return Controller

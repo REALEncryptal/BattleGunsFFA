@@ -4,14 +4,21 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Controller = {}
 
-local Constants, Signal, CameraController
+local Constants, Signal, CameraController, Catchup
 
 local function lerp(a,b,t)
     return a + (b - a) * t
 end
 
+local function roundVector(v:Vector3, d:number)
+    d = d or 0
+    v *= d
+    return Vector3.new(math.round(v.X), math.round(v.Y), math.round(v.Z))/d
+end
+
 function Controller:PreInit()
     Signal = shared.Import "Signal"
+    Catchup = shared.Import "Catchup"
     Controller.WallJump = Signal.new()
     Controller.WallSlide = Signal.new()
     Controller.WallDismount = Signal.new()
@@ -26,11 +33,14 @@ function Controller:Init()
     Controller.Humanoid = nil
 
     Controller.LastMoveDirection = Vector3.new()
+    Controller.LastValidVelocityUnit = Vector3.new()
+    Controller.LastPosition = Vector3.new()
     Controller.WallJumps = 2
     Controller.WasWishJump = false
     Controller.LastSlide = tick()
     Controller.LerpedFov = 0
     Controller.FOVMod = 7
+    Controller.SlideCancelQueued = false
 
     Controller.WallSliding = false
     Controller.Sliding = false
@@ -38,7 +48,10 @@ function Controller:Init()
     Controller.WasWishSlide = false
 
     Controller.DebugRays = {}
+    --
 
+    Controller.Speed = Constants.SPEED -- momentum without the mass type sh
+    
     --
 end
 
@@ -145,7 +158,6 @@ function Controller:CanVault():boolean
     local Direction = RootPart.CFrame.LookVector
     local Params = Controller:GetParams()
     local TorsoOffset = Vector3.yAxis
-    local HeadOffset = Vector3.yAxis * .5
 
     -- Can our head fit?
     local HeadResult:RaycastResult|nil = Controller:LineCast(Head.Position+Vector3.yAxis, Head.Position+Vector3.yAxis, 1, Direction * 2, Params)
@@ -157,6 +169,7 @@ end
 
 function Controller:ApplyVelocity(Velocity:Vector3, TimeLength:number): LinearVelocity
     local LV = Instance.new("LinearVelocity")
+
     LV.Name = "Velocity"
     LV.Attachment0 = Controller.Humanoid.Parent.HumanoidRootPart.RootAttachment
     LV.ForceLimitsEnabled = false
@@ -167,94 +180,7 @@ function Controller:ApplyVelocity(Velocity:Vector3, TimeLength:number): LinearVe
     return LV
 end
 
-function Controller:WallJumpWallSlide(Grounded, WishJump)
-    local WasSliding = Controller.WallSliding
-    Controller.WallSliding = false
-
-    if not Grounded then
-        local Result:RaycastResult = Controller:GetWallCast(1, 4)
-
-        if Result and Result.Distance <= 1.5  then
-            local CanVault = Controller:CanVault()
-
-            if WishJump and not Controller.WasWishJump and CanVault then
-                -- vault
-                Controller.Vault:Fire()
-                Controller:ApplyVelocity(
-                    Vector3.yAxis * 30, 
-                    .1
-                )
-
-
-                local RootPart:Part = Controller.Humanoid.Parent.HumanoidRootPart
-                local InitalVelocity = RootPart.AssemblyLinearVelocity
-                local Direction = RootPart.CFrame.LookVector
-                local Params = Controller:GetParams()
-                local TorsoOffset = Vector3.yAxis
-                local TorsoResult:RaycastResult|nil = Controller:LineCast(RootPart.Position-TorsoOffset, RootPart.Position+TorsoOffset, 10, Direction * 2, Params)
-
-                local Normal = TorsoResult.Normal
-                Direction = Normal * -1
-                local NewCFrame = CFrame.new(RootPart.Position + Direction * 6 + Vector3.new(0, 5, 0))
-                local Info = TweenInfo.new(.3, Enum.EasingStyle.Linear)
-                local Tween = TweenService:Create(RootPart, Info, {CFrame = NewCFrame})
-                Tween.Completed:Connect(function()
-                    local Direction = workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
-                    Direction = Direction.Unit
-                    local Velocity = Direction * 30 + Vector3.yAxis * 10 + InitalVelocity
-                    RootPart.AssemblyLinearVelocity = Velocity*.6
-                    Controller:ApplyVelocity(Velocity, .1)
-                end)
-                Tween:Play()
-
-            elseif  WishJump and not Controller.WasWishJump and Controller.WallJumps > 0 then
-                Controller.WallJump:Fire()
-                Controller.WallJumps-=1
-
-                local v = Vector3.yAxis * 30 + Result.Normal * 20
-                v = v + Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity* 1.4 * Vector3.new(1,0,1) 
-
-                Controller:ApplyVelocity(v, .1)
-                
-                Controller.WallJumpStart = nil
-            elseif WishJump and not Controller.WasWishJump then
-                -- jump off wall slide
-                Controller.WallDismount:Fire()
-                Controller.WallJumps = -1
-
-                Controller:ApplyVelocity(Result.Normal * 20 + Vector3.yAxis * -30, .1)
-
-            elseif Controller.WallJumps >= 0 then
-                
-                if not Controller.WallJumpStart then
-                    Controller.WallJumpStart = tick()
-                end
-
-                if tick()-Controller.WallJumpStart <= 2 and not Controller.WishSlide then
-                    Controller.WallSliding = true
-                    local v = Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity
-                    Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(
-                        v.X,
-                        math.clamp(v.Y, -10, math.huge),
-                        v.Z
-                    )
-                end
-            end
-        end
-    else
-        Controller.WallJumpStart = nil
-        Controller.WallJumps = 2
-        Controller:ClearDebugRays()
-    end
-
-    if not WasSliding and Controller.WallSliding then
-        Controller.WallSlide:Fire(true)
-    elseif WasSliding and not Controller.WallSliding then
-        Controller.WallSlide:Fire(false)
-    end
-end
-
-function Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
+function Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT, Speed)
     Controller.WishSlide = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
     Controller.WasSliding = Controller.Sliding
 
@@ -265,14 +191,17 @@ function Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
         and tick()-Controller.LastSlide > Constants.SLIDE_COOLDOWN
         and MoveDirection.Magnitude > 0
         and not Controller.Sliding
-        and not Controller.WallSliding
         and not WishJump
     then
         -- slide start
+        Controller.SlideCancelQueued = false
+        Controller.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
         Controller.LastSlide = tick()
         Controller.Sliding = true
         Controller.SlideDir = MoveDirection
-        Controller.SlideSpeed = Constants.SLIDE_SPEED
+        if Speed <= Constants.SLIDE_MOD_MAX_SPEED then
+            Controller.Speed += Constants.SLIDE_MOD
+        end
 
         -- get ground normal
         local Params = RaycastParams.new()
@@ -280,13 +209,13 @@ function Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
         Params.FilterDescendantsInstances = {workspace.Ignore, Controller.Humanoid.Parent, workspace.CurrentCamera}
         local Result:RaycastResult = workspace:Raycast(Controller.Humanoid.Parent.HumanoidRootPart.Position, Vector3.new(0,-5,0), Params)
 
-        if Result then
+        if Result and Speed <= Constants.SLIDE_MOD_MAX_SPEED then
             local Normal = Result.Normal
 
             local SlideDirection = Controller.SlideDir.Unit
             local Alignment = SlideDirection:Dot(Normal)
 
-            Controller.SlideSpeed += Alignment * 20
+            Controller.Speed += Constants.SLIDE_ALIGNMENT_MOD * Alignment
         end
 
     end
@@ -294,17 +223,16 @@ function Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
 
     if WishJump or (not Controller.WasWishSlide and Controller.WishSlide and Controller.WasSliding) then
         Controller.Sliding = false
-        Controller.Humanoid.WalkSpeed = Constants.SPEED
     end
 
-    if Controller.Sliding and Controller.SlideSpeed > 5   then
-        Controller.SlideSpeed = Constants.SLIDE_SPEED * (1-(tick()-Controller.LastSlide)/Constants.SLIDE_TIME)
-        Controller.Humanoid.WalkSpeed = Controller.SlideSpeed
+    if Controller.Sliding and Controller.Speed > 5   then
+        -- apply slide friction
+        Controller.Speed = Catchup(Controller.Speed, 0, Constants.SLIDE_DECEL * DT)
 
         -- bounces
         local Cast:RaycastResult = Controller:GetWallCast(2,3)
 
-        if Cast and Cast.Distance < 1.5 then
+        if Cast and Cast.Distance < 1.5 and Constants.SLIDE_BOUNCE then
             -- reflect the player
             local Normal = Cast.Normal
 
@@ -333,16 +261,60 @@ function Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
         Controller.Humanoid:Move(Controller.SlideDir)
     else
         Controller.Sliding = false
-        Controller.Humanoid.WalkSpeed = Constants.SPEED
     end
 
     if not Controller.WasSliding and Controller.Sliding then
         Controller.Slide:Fire(true)
     elseif Controller.WasSliding and not Controller.Sliding then
+        if Speed <= Constants.SLIDE_MOD_MAX_SPEED then
+            Controller.Speed = math.clamp(Controller.Speed + Constants.SLIDE_EXIT_MOD, Constants.SPEED, Constants.SPEED_CAP)
+        end
+
+        Controller.SlideCancelQueued = false
+
         Controller.Slide:Fire(false)
     end
    
     Controller.WasWishSlide = Controller.WishSlide
+end
+
+function Controller:Accelerate(DT, MoveDirection, LastMoveDirection, Grounded, Speed)
+    if MoveDirection.Magnitude <= 0.1 then return end -- no acceleration if not moving
+    if Controller.Sliding then return end -- no acceleration while sliding
+
+    local MaxSpeed = Grounded and Constants.MAX_ACCEL_SPEED or Constants.MAX_ACCEL_AIR_SPEED
+    local Accel = Grounded and Constants.ACCEL or Constants.ACCEL_AIR
+
+    local NewSpeed = Catchup(Controller.Speed, MaxSpeed, Accel * DT)
+
+    Controller.Speed = NewSpeed
+end
+
+function Controller:Decelerate(DT, MoveDirection, ActualVelocityUnit, ActualVelocity, Grounded)
+    if MoveDirection.Magnitude > 0.1 and ActualVelocityUnit:Dot(MoveDirection) > .7 then return end -- no deceleration if moving
+    if Controller.Sliding then return end -- no deceleration while sliding
+
+    local NewSpeed = Catchup(Controller.Speed, Constants.SPEED, Constants.DECEL * DT)
+
+    if MoveDirection.Magnitude <= 0 and Grounded and ActualVelocity.Magnitude <= 4 then
+        NewSpeed = Constants.SPEED
+    end
+
+    Controller.Speed = NewSpeed
+end
+
+function Controller:CalculateFOV(DT, Speed)
+    Speed/= Controller.FOVMod
+
+    -- instead of lerp change the lerped by catchup * delta time
+    local Increment = 100 * DT
+    Speed *= .2
+
+    Controller.LerpedFov = Catchup(Controller.LerpedFov, Speed, Increment)
+
+    Controller.FOVMod = Controller.Sliding and 1 or 2
+
+    CameraController:AddOffset(Controller.LerpedFov)
 end
 
 function Controller.Update(DT)
@@ -353,52 +325,66 @@ function Controller.Update(DT)
     local Grounded = Controller.Humanoid.FloorMaterial ~= Enum.Material.Air
     local MoveDirection = Controller.Humanoid.MoveDirection
     local LastMoveDirection = Controller.LastMoveDirection
-    local WishJump = Controller.Humanoid.Jump
+    local WishJump = Controller.Humanoid.Jump and Controller.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
+    local PlaneVelocity = Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity * Vector3.new(1,0,1)
+    local Speed = PlaneVelocity.Magnitude
+    local Position = Controller.Humanoid.Parent.PrimaryPart.Position
 
-    if WishJump and Controller.Sliding then
-        Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity = Controller.SlideDir.Unit * 30
+    Controller.SlideCancelQueued = Controller.SlideCancelQueued or (Controller.Humanoid.Jump and Controller.Sliding)
+
+    -- This gets the actual velocity of the player and ignores most of the vibration
+    local ActualVelocity = (roundVector(Position, 10) - roundVector(Controller.LastPosition, 10)) * Vector3.new(1,0,1)
+    local ActualVelocityUnit = ActualVelocity.Unit
+
+    if (ActualVelocityUnit ~= ActualVelocityUnit) then
+        ActualVelocityUnit = Vector3.new()
     end
 
-    -- wall jump
-    Controller:WallJumpWallSlide(Grounded, WishJump)
+    -- Momentum 
+    Controller:Accelerate(DT, MoveDirection, LastMoveDirection, Grounded, Speed)
+    Controller:Decelerate(DT, MoveDirection, ActualVelocityUnit, ActualVelocity, Grounded)
+
+    -- Slide cancel
+    local MinTimeMet = tick() - Controller.LastSlide > Constants.SLIDE_MIN_TIME
+
+    if Controller.Sliding and MinTimeMet then
+        Controller.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)   
+    end
+
+    if Controller.SlideCancelQueued and MinTimeMet then
+        WishJump = true
+    end
+
+    if 
+        (WishJump or Controller.SlideCancelQueued)
+        and Controller.Sliding 
+        and Speed <= Constants.SLIDE_MOD_MAX_SPEED 
+        and MinTimeMet
+    then
+        Controller.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+        Controller.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity = Controller.SlideDir.Unit * 30
+        Controller.Speed = math.clamp(Controller.Speed + Constants.SLIDE_CANCEL_MOD, Constants.SPEED, Constants.SPEED_CAP)
+        Controller.SlideCancelQueued = false
+    end
 
     -- slide
-    Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT)
+    Controller:CalculateSlide(Grounded, MoveDirection, WishJump, DT, Speed)
 
-    -- check moving state
-    if MoveDirection.Magnitude > 0 then
-        if MoveDirection ~= LastMoveDirection then
-            --CameraController:GetTween("MOVE_FOV"):Play()
-        end
-    else
-        --CameraController:GetTween("DEFAULT_FOV"):Play()
-    end
+    -- Cap speed
+    Controller.Speed = math.clamp(Controller.Speed, 0, Constants.SPEED_CAP)
 
-    local PlaneVelocity = Controller.Humanoid.Parent.HumanoidRootPart.AssemblyLinearVelocity * Vector3.new(1,0,1)
-    local Speed = PlaneVelocity.Magnitude/Controller.FOVMod
+    -- fov
+    Controller:CalculateFOV(DT, Speed)
 
-    -- instead of lerp change the lerped by catchup * delta time
-    local Catchup = 100 * DT
-    Speed *= .2
-
-    if Controller.LerpedFov > Speed then
-        Controller.LerpedFov = math.clamp(Controller.LerpedFov - Catchup, Speed, Controller.LerpedFov)
-    elseif Controller.LerpedFov < Speed then
-        Controller.LerpedFov = math.clamp(Controller.LerpedFov + Catchup, 0, Speed)
-    end
-
-    if Controller.Sliding then
-        Controller.FOVMod = 1
-    else
-        Controller.FOVMod = 2
-    end
-
-    print(Controller.LerpedFov)
-
-    CameraController:AddOffset(Controller.LerpedFov)
-
+    -- update state
     Controller.LastMoveDirection = Controller.Humanoid.MoveDirection
     Controller.WasWishJump = WishJump
+    Controller.LastPosition = Controller.Humanoid.Parent.PrimaryPart.Position
+    Controller.LastValidVelocityUnit = ActualVelocityUnit
+
+    -- Update humanoid speed
+    Controller.Humanoid.WalkSpeed = Controller.Speed
 end
 
 return Controller

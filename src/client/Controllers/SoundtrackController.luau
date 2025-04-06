@@ -7,7 +7,7 @@ function Controller:Init()
     PlaySound = shared.Import "PlaySound"
     Constants = shared.Import "Constants"
 
-    Controller.Volume = 0.2
+    Controller.Volume = Constants.BACKGROUND_VOLUME
     Controller.Track = 1
 
     Controller.Soundtracks = ReplicatedStorage.Assets.SFX.Soundtracks:GetChildren()
@@ -21,6 +21,7 @@ function Controller:UpdateVolumes()
 end
 
 function Controller:Play()
+    Controller.Volume = Constants.BACKGROUND_VOLUME
     Controller.Track += 1
     if Controller.Track > #Controller.Soundtracks then
         Controller.Track = 1
