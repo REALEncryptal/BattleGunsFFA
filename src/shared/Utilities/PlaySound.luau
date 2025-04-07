@@ -1,7 +1,12 @@
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-return function (Sound: Sound, Position: Vector3)
+return function (Sound: Sound | Folder, Position: Vector3)
+    if Sound:IsA("Folder") then
+        local Sounds = Sound:GetChildren()
+        Sound = Sounds[math.random(1, #Sounds)]
+    end
+
     Sound = Sound:Clone()
     Debris:AddItem(Sound, Sound.TimeLength + 2)
 

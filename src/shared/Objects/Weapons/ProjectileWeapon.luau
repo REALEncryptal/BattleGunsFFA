@@ -23,7 +23,7 @@ function ProjectileWeapon.new(Weapon)
     function self:UpdateCastBehaviour() self.CastBehaviour.RaycastParams = self:CreateParams() end
     self:UpdateCastBehaviour()
     self.CastBehaviour.Acceleration = shared.Import("Constants").BULLET_ACCELERATION
-    self.CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers.Physical
+    self.CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers:FindFirstChild(self.Config.Projectile or "Physical")
     self.CastBehaviour.CosmeticBulletContainer = workspace.Ignore
 
     -- events

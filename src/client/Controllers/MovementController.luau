@@ -4,7 +4,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Controller = {}
 
-local Constants, Signal, CameraController, Catchup
+local Constants, Signal, CameraController, Catchup, Event
 
 local function lerp(a,b,t)
     return a + (b - a) * t
@@ -29,6 +29,7 @@ end
 function Controller:Init()
     Constants = shared.Import "Constants"
     CameraController = shared.Import "CameraController"
+    Event = shared.Import "Event"
     --
     Controller.Humanoid = nil
 

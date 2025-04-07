@@ -107,6 +107,11 @@ function Controller.CharacterAdded(Character, Player)
 
             local MoneyReward = Character:GetAttribute("LastHitHeadshot") and Constants.HEAD_KILL_REWARD or Constants.KILL_REWARD
             Killer.Data:SetAttribute("Money", Killer.Data:GetAttribute("Money") + MoneyReward)
+
+            Killer.Character:SetAttribute("Health", 100)
+            Killer.Character.Humanoid.Health = 100
+
+            Event:FireClient(Killer, "Speedboost")
         end
 
         -- effects
@@ -119,7 +124,7 @@ function Controller.CharacterAdded(Character, Player)
         Controller.PlayerAnimations[Player] = {}
 
         local SlideAnimation = Instance.new("Animation")
-        SlideAnimation.AnimationId = "rbxassetid://105890090004509"
+        SlideAnimation.AnimationId = "rbxassetid://139482801025731"
         Controller.PlayerAnimations[Player].Slide = Character:WaitForChild("Humanoid"):WaitForChild("Animator"):LoadAnimation(SlideAnimation)
     end
 end
@@ -190,6 +195,13 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
     end
 
     -- Create bullet hole
+    local Config = require(Weapon:FindFirstChild("Configuration"))
+
+    if Config.CreateBulletHole then
+        task.spawn(Config.CreateBulletHole, Player, Position, Instance, Normal)
+        return true
+    end
+
     local BulletHole = ReplicatedStorage.Assets.BulletHole:Clone()
     BulletHole.Position = Position
     BulletHole.CFrame = CFrame.new(Position, Position + Normal) * CFrame.Angles(0, 0, math.random(0, 360))
@@ -257,9 +269,10 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
     if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
 
     local Config = require(Weapon:FindFirstChild("Configuration"))
-    -- Check distance
-    --local Distance = (Position - Instance.Position).Magnitude
-    --if Distance > 10 then return false end
+
+    if Config.BulletHitEvent then
+        task.spawn(Config.BulletHitEvent, Player, Position, Instance)
+    end
 
     -- Damage
     local IsHeadShot = Instance.Name == "Head"
@@ -278,6 +291,10 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
     local Victim = game.Players:GetPlayerFromCharacter(Instance)
     if Victim then
         Event:FireClient(Victim, "Hit", Player, IsHeadShot)
+    end
+
+    if Config.PlayerHitEvent then
+        task.spawn(Config.PlayerHitEvent, Player, Position, Instance, Victim, Damage, IsHeadShot)
     end
     
     Instance:SetAttribute("LastHit", tick())

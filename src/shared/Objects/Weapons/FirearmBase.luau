@@ -142,6 +142,10 @@ function FirearmBase:Fire()
     self.Bullets -= 1
     self.LastDischarge = tick()
 
+    if self.Config.OnFire then
+        task.spawn(self.Config.OnFire, self)
+    end
+
     -- open crosshair
     shared.Import("InterfaceController"):ShoveCrosshair(self.Config.CrosshairRecoil*self.DeltaTime)
 
@@ -214,6 +218,10 @@ function FirearmBase:FunctionalValidateHit(RaycastResult:RaycastResult) end
 function FirearmBase:BulletHit(RaycastResult): boolean
 
     task.spawn(function()
+        if self.Config.ImpactEffect then
+            task.spawn(self.Config.ImpactEffect, RaycastResult)
+            return
+        end
         shared.Import("ImpactEffect")(RaycastResult)
     end)
 

@@ -12,9 +12,12 @@ function Controller:Init()
     -- setup
     Controller.Caster = FastCast.new()
 
-
     -- caster events
-    Controller.Caster.RayHit:Connect(function(_, RaycastResult:RaycastResult, _, _)
+    Controller.Caster.RayHit:Connect(function(cast, RaycastResult:RaycastResult, _, _)
+        if cast.WeaponConfig.ImpactEffect then
+            task.spawn(cast.WeaponConfig.ImpactEffect, RaycastResult)
+            return
+        end
         ImpactEffect(RaycastResult)
     end)
 
@@ -46,14 +49,13 @@ end
 
 function Controller.FireProjectile(Attacker:Model, Weapon: Model, Origin: Vector3, Direction: Vector3)
     local WeaponConfig = require(Weapon.Configuration)
-    local Behaviour  = Controller:NewBehaviour(Attacker)
+    local Behaviour  = Controller:NewBehaviour(Attacker, WeaponConfig)
 
-
-    Controller.Caster:Fire(Origin, Direction, WeaponConfig.BulletVelocity or Constants.BULLET_SPEED, Vector3.zero, Behaviour)
+    Controller.Caster:Fire(Origin, Direction, WeaponConfig.BulletVelocity or Constants.BULLET_SPEED, Vector3.zero, Behaviour, WeaponConfig)
 end
 
 --
-function Controller:NewBehaviour(Attacker:Model)
+function Controller:NewBehaviour(Attacker:Model, Config)
     local Params = RaycastParams.new()
     Params.FilterType = Enum.RaycastFilterType.Blacklist
     Params.FilterDescendantsInstances = {workspace.Ignore, Attacker}
@@ -61,7 +63,7 @@ function Controller:NewBehaviour(Attacker:Model)
     local CastBehaviour = FastCast.newBehavior()
     CastBehaviour.RaycastParams = Params
     CastBehaviour.Acceleration = Constants.BULLET_ACCELERATION
-    CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers.Physical
+    CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers:FindFirstChild(Config.Projectile or "Physical")
     CastBehaviour.CosmeticBulletContainer = workspace.Ignore
 
     return CastBehaviour

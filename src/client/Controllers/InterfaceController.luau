@@ -69,6 +69,8 @@ function Controller:Init()
     Controller:SetupUiScale()
     Controller:SetupGameState()
     Controller:SetupKillStreak()
+
+    Controller:SetupSplats()
     
 
     -- Check if we joined during a map vote
@@ -76,6 +78,47 @@ function Controller:Init()
     if GameState.State == "MapVote" then
         Controller:StartVote(GameState.Maps, GameState.StartTime)
     end
+end
+
+function Controller:SetupSplats()
+    local SplatContainer = Controller.Gui:WaitForChild("Splats")
+
+    Event:Listen("ScreenSplat", function()
+        Controller:NewSplat()
+    end)
+end
+
+function Controller:NewSplat()
+    PlaySound(ReplicatedStorage.Assets.SFX.Splat)
+
+    local Splat = ReplicatedStorage.Assets.Interface.Splat:Clone()
+    Splat.Parent = Controller.Gui.Splats
+    Splat.Position = UDim2.new(math.random(), 0, math.random(), 0)
+    Splat.Size = UDim2.new(0, 0, 0, 0)
+    Splat.ImageTransparency = 1
+    Splat.Rotation = math.random(0, 360)
+
+    TweenService:Create(
+        Splat,
+        TweenInfo.new(.1, Enum.EasingStyle.Quad),
+        {
+            Size = UDim2.new(math.random() * .2 + .4, 0, math.random() * .2 + .4, 0),
+            ImageTransparency = 0
+        }
+    ):Play()
+
+    task.wait(2)
+
+    TweenService:Create(
+        Splat,
+        TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.In),
+        {
+            Position = UDim2.new(Splat.Position.X.Scale, 0, Splat.Position.Y.Scale + .3, 0),
+            ImageTransparency = 1,
+        }
+    ):Play()
+
+    Debris:AddItem(Splat, 2)
 end
 
 -- kill streaks

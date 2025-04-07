@@ -4,11 +4,11 @@ local Constants = {
     -- PLACE
     VERSION = 1,
     DEBUG = true,
-    LOOP = false, -- run the game loop
-    SHOW_CASTS = true, -- show debug casts
-    SHOW_MOVE_CASTS = true, -- show debug move casts
-    SHOW_SOUNDS = true, -- show where sounds are coming from and what they are
-    DATASAVE = false, -- toggles player data load and save
+    LOOP = true, -- run the game loop
+    SHOW_CASTS = false, -- show debug casts
+    SHOW_MOVE_CASTS = false, -- show debug move casts
+    SHOW_SOUNDS = false, -- show where sounds are coming from and what they are
+    DATASAVE = true, -- toggles player data load and save
 
     -- MUSIC
     BACKGROUND_VOLUME = 0.3,
@@ -21,7 +21,7 @@ local Constants = {
 
     -- MAPS
     VOTE_TIME = 10,
-    ROUND_TIME = INF,
+    ROUND_TIME = 160,
 
     -- PROFILE
     PROFILE_TEMPLATE = {
@@ -31,7 +31,7 @@ local Constants = {
         KillEffect = "Conffeti",
         
         Equipped = {
-            Skin = "Default",
+            Skin = "Drefault",
             KillEffect = "Default"
         },
         Skins = {
