@@ -10,14 +10,19 @@
 
 local Cito = {}
 Cito.__index = Cito
+local CollectionService = game:GetService("CollectionService")
 
 local RunService  = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Librarian = require(script.Librarian)
+local Signal = require(script.Parent.Packages._Index["sleitnick_signal@2.0.1"].signal)
+
+local IsServer = RunService:IsServer()
 
 function Cito.new()
 	local self = setmetatable({}, Cito)
 
+	_G.CitoLoaded = Signal.new()
 	self.Controllers = {}
 
 	return self
@@ -31,13 +36,28 @@ function Cito:Discover(Path)
 	return self
 end
 
-function Cito:PreInit(Path)
-
-	for _, Module in ipairs(Path:GetDescendants()) do
+function Cito:PreInit(Paths: {}, Log:boolean)
+	for _, Module in ipairs(Paths) do
 		if not Module:IsA("ModuleScript") then continue end
 
+		if Log then print("[CITO] Loading module: " .. Module.Name) end
+
+		-- handle externl controllers
+		local ModuleIsServer = Module:GetAttribute("IsServer")
+		if ModuleIsServer ~= nil then
+			if Log then print("[CITO] Module: " .. Module.Name .. " is server: " .. tostring(ModuleIsServer)) end
+			if ModuleIsServer ~= IsServer then continue end
+			if Log then print("[CITO] Runnning module on: "..(IsServer and "Server" or "Client")) end
+		end
+
+		local Name = Module.Name
+
+		-- setup
 		Module = require(Module)
 		table.insert(self.Controllers, Module)
+
+		Module._NAME = Name
+		
 
 		if Module.PreInit then
 			-- we want this to finish before we continue
@@ -48,8 +68,11 @@ function Cito:PreInit(Path)
 	return self
 end
 
-function Cito:Init()
+function Cito:Init(Log:boolean)
 	for _, Module in ipairs(self.Controllers) do
+		if Module._INITIALIZED then continue end
+		if Log then print("[CITO] Initializing module: " .. Module._NAME) end
+
 		if Module.Init then
 			-- we dont care if this finishes
 			task.spawn(Module.Init)
@@ -86,14 +109,20 @@ function Cito:Init()
 		end
 	}
 
+	for _, Module in ipairs(self.Controllers) do
+		if Module._INITIALIZED then continue end
+		Module._INITIALIZED = true
 
-	for Name, Function in pairs(BuiltFunctions) do
-		for _, Module in ipairs(self.Controllers) do
+		if Log then print("[CITO] Initializing functions for module: " .. Module._NAME) end
+
+		for Name, Function in pairs(BuiltFunctions) do
 			if not Module[Name] then continue end
 
-			Function(Module[Name])
+			task.spawn(Function, Module[Name])
 		end
 	end
+
+	_G.CitoLoaded:Fire()
 
 	return self
 end

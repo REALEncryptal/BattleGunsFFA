@@ -1,24 +1,19 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Controller = {}
 
-local Constants, Event, PlaySound, FastCast, ImpactEffect
+local Constants, Event, FastCast, WeaponController
 function Controller:Init() 
     Constants = shared.Import "Constants"
-    Event = shared.Import "Event"
-    PlaySound = shared.Import "PlaySound"
     FastCast = shared.Import "FastCastRedux"
-    ImpactEffect = shared.Import "ImpactEffect"
+    WeaponController = require(script.Parent.WeaponController)
 
     -- setup
     Controller.Caster = FastCast.new()
 
     -- caster events
     Controller.Caster.RayHit:Connect(function(cast, RaycastResult:RaycastResult, _, _)
-        if cast.WeaponConfig.ImpactEffect then
-            task.spawn(cast.WeaponConfig.ImpactEffect, RaycastResult)
-            return
-        end
-        ImpactEffect(RaycastResult)
+        print("Big Black Something Else")
+        WeaponController.RaycastWeapon(nil, cast.UserData.Config, RaycastResult.Position, RaycastResult.Instance, RaycastResult.Normal)
     end)
 
     Controller.Caster.LengthChanged:Connect(function(cast, segmentOrigin, segmentDirection, length, _, cosmeticBulletObject)
@@ -37,14 +32,6 @@ function Controller:Init()
             cosmeticBullet:Destroy()
         end
     end)
-
-    -- events
-    Event:Listen("PlaySound", Controller.PlaySound)
-    Event:Listen("FireProjectile", Controller.FireProjectile)
-end
-
-function Controller.PlaySound(Position: Vector3, Sound: Sound)
-    PlaySound(Sound, Position)
 end
 
 function Controller.FireProjectile(Attacker:Model, Weapon: Model | ModuleScript, Origin: Vector3, Direction: Vector3)
@@ -56,7 +43,7 @@ function Controller.FireProjectile(Attacker:Model, Weapon: Model | ModuleScript,
 end
 
 --
-function Controller:NewBehaviour(Attacker:Model, Config)
+function Controller:NewBehaviour(Attacker:Model|BasePart, Config)
     local Params = RaycastParams.new()
     Params.FilterType = Enum.RaycastFilterType.Blacklist
     Params.FilterDescendantsInstances = {workspace.Ignore, Attacker}
@@ -65,7 +52,6 @@ function Controller:NewBehaviour(Attacker:Model, Config)
     CastBehaviour.RaycastParams = Params
     CastBehaviour.MaxDistance = 99999999
     CastBehaviour.Acceleration = Constants.BULLET_ACCELERATION
-    CastBehaviour.CosmeticBulletTemplate = ReplicatedStorage.Assets.Tracers:FindFirstChild(Config.Projectile or "Physical")
     CastBehaviour.CosmeticBulletContainer = workspace.Ignore
 
     return CastBehaviour

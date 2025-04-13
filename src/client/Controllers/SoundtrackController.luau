@@ -12,6 +12,7 @@ function Controller:Init()
 
     Controller.Soundtracks = ReplicatedStorage.Assets.SFX.Soundtracks:GetChildren()
     Controller:UpdateVolumes()
+
 end
 
 function Controller:UpdateVolumes()

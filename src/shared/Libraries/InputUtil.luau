@@ -1,3 +1,5 @@
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
@@ -16,6 +18,7 @@ local Util = {
 	_Keys = {}, -- store calbacks
 	_Map = {}, -- store the position of those callbacks
 	_Buttons = {},
+	_Drag = {}, -- info for dragging
 	_TouchObjects = {},
 	_Root = nil,
 	
@@ -61,6 +64,14 @@ function Util:BindAction(Action, Callback, CreateMobileButton, ...)
 	-- create button
 	Util._Buttons[Action] = Util:_CreateMobileButton()
 	Util._Buttons[Action].Name = Action
+
+	-- add drag info
+	Util._Drag[Action] = {
+		Draggable = false,
+		Dragging = false,
+		DragStart = Vector2.new(0,0), -- where the mouse was when the drag started
+		DefaultPosition = Util._Buttons[Action].Position, -- where the button will snap back to
+	}
 	
 	--
 	Util:_ToggleMobileControls(Util._IsMobile)
@@ -73,7 +84,21 @@ function Util:BindAction(Action, Callback, CreateMobileButton, ...)
 		end
 		
 		Util._TouchObjects[Action] = InputObject
+
+		-- dragging
+		local Info = Util._Drag[Action]
+
+		if Info and Info.Draggable then
+			Info.Dragging = true
+			Info.DragStart = UserInputService:GetMouseLocation()
+			
+			local Began = Info.Began
+			if Began then
+				task.spawn(Began, InputObject)
+			end
+		end
 		
+		-- change sprite rect offset and run callback
 		Util:_ChangeButtonRectOffset(Action, Vector2.new(1,1))
 		Util._MobileInputEvent(Action, Enum.UserInputState.Begin)
 	end)
@@ -82,7 +107,23 @@ function Util:BindAction(Action, Callback, CreateMobileButton, ...)
 		if InputObject ~= Util._TouchObjects[Action] then return end
 		
 		Util._TouchObjects[Action] = nil
+
+		-- dragging
+		local Info = Util._Drag[Action]
+
+		if Info and Info.Draggable then
+			Info.Dragging = false
+			
+			local Ended = Info.Ended
+			if Ended then
+				task.spawn(Ended, InputObject)
+			end
+			
+			-- snap back to default position
+			Util:GetButton(Action).Position = Info.DefaultPosition
+		end
 		
+		-- change sprite rect offset and run callback
 		Util:_ChangeButtonRectOffset(Action, Vector2.new(0,1))
 		Util._MobileInputEvent(Action, Enum.UserInputState.End)
 	end)
@@ -103,6 +144,9 @@ function Util:UnbindAction(Action:string)
 	-- remove button
 	Util._Buttons[Action]:Destroy()
 	Util._Buttons[Action] = nil
+
+	-- remove drag info
+	Util._Drag[Action] = nil
 end
 
 --
@@ -111,6 +155,28 @@ function Util:GetButton(Action:string):ImageButton
 	assert(Util._Buttons[Action], "[InputUtil] GetButton > "..Action.." has not been bound.")
 	
 	return Util._Buttons[Action]
+end
+
+function Util:SetDragCallback(Action:string, Update, Began, Ended)
+	Update = Update or function () end
+	Began = Began or function () end
+	Ended = Ended or function () end
+
+	assert(typeof(Action)=="string", "[InputUtil] SetDragCallback > Action must be a string not "..typeof(Action))
+	assert(typeof(Update)=="function", "[InputUtil] SetDragCallback > Update must be a function not "..typeof(Update))
+	assert(typeof(Began)=="function", "[InputUtil] SetDragCallback > Began must be a function not "..typeof(Began))
+	assert(typeof(Ended)=="function", "[InputUtil] SetDragCallback > Ended must be a function not "..typeof(Ended))
+	assert(Util._Buttons[Action], "[InputUtil] SetDragCallback > "..Action.." has not been bound.")
+
+	Util._Drag[Action] = {
+		Draggable = true,
+		Dragging = false,
+		DragStart = Vector2.new(0,0), -- where the mouse was when the drag started
+		DefaultPosition = Util._Buttons[Action].Position, -- where the button will snap back to
+		Update = Update,
+		Began = Began,
+		Ended = Ended
+	}
 end
 
 function Util:SetImage(Action:string, Image:string)
@@ -125,15 +191,25 @@ function Util:SetPosition(Action:string, Position:UDim2)
 	assert(typeof(Action)=="string", "[InputUtil] SetPosition > Action must be a string not "..typeof(Action))
 	assert(typeof(Position)=="UDim2", "[InputUtil] SetPosition > Position must be a UDim2 not "..typeof(Position))
 	assert(Util._Buttons[Action], "[InputUtil] SetPosition > "..Action.." has not been bound.")
+
+	-- check if the button is draggable
+	local Info = Util._Drag[Action]
+	if Info and Info.Draggable then
+		Info.DefaultPosition = Position
+	end
 	
+	-- set the position
 	Util:GetButton(Action).Position = Position
 end
 	
-function Util:SetSize(Action:string, Size:UDim2)
+function Util:SetSize(Action:string, Size:UDim2|number)
 	assert(typeof(Action)=="string", "[InputUtil] SetSize > Action must be a string not "..typeof(Action))
-	assert(typeof(Size)=="UDim2", "[InputUtil] SetSize > Size must be a UDim2 not "..typeof(Size))
+	assert(typeof(Size)=="UDim2" or typeof(Size) =="number", "[InputUtil] SetSize > Size must be a UDim2 or Number not "..typeof(Size))
 	assert(Util._Buttons[Action], "[InputUtil] SetSize > "..Action.." has not been bound.")
 
+	if typeof(Size) == "number" then
+		Size = UDim2.new(0, Size, 0, Size)
+	end
 	Util:GetButton(Action).Size = Size
 end
 	
@@ -219,6 +295,37 @@ function Util._UpdateInputType(InputType)
 	end
 end
 
+function Util._Update(DeltaTime)
+	for Action, Info in pairs(Util._Drag) do
+		if not Info.Draggable then continue end -- skip if not draggable
+
+		local Button:ImageButton = Util:GetButton(Action)
+
+		-- we are not dragging, if the button is not in the default position then snap it back
+		if not Info.Dragging and Button.Position ~= Info.DefaultPosition then
+			Button.Position = Info.DefaultPosition
+		elseif Info.Dragging then
+			-- we are dragging, update the position
+			local MousePos = UserInputService:GetMouseLocation() 
+			local DefaultPosition = Vector2.new(Info.DefaultPosition.X.Offset-Button.Size.X.Offset/2, Info.DefaultPosition.Y.Offset-Button.Size.Y.Offset/2)
+			local Size = Vector2.new(Button.Size.X.Offset, Button.Size.Y.Offset)
+			local StartPosition = Info.DragStart
+
+			local ButtonPos = MousePos
+
+			Button.Position = UDim2.new(0, ButtonPos.X, 0, ButtonPos.Y)
+
+			-- run the update callback
+			local Update = Info.Update
+			if Update then
+				-- get offset from the drag start
+				local Offset = MousePos - Info.DragStart
+				task.spawn(Update, DeltaTime, Offset)
+			end
+		end
+	end
+end
+
 -- connections
 UserInputService.InputBegan:Connect(function(...)
 	Util._InputEvent(Enum.UserInputState.Begin, ...)
@@ -229,6 +336,8 @@ UserInputService.InputEnded:Connect(function(...)
 end)
 
 UserInputService.LastInputTypeChanged:Connect(Util._UpdateInputType)
+
+RunService.RenderStepped:Connect(Util._Update)
 
 -- util functions
 function CountTable(Table:{any:any}):number

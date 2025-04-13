@@ -3,12 +3,13 @@ local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Controller = {}
 
-local Constants, Event, CharacterController, KillEffectController
+local Constants, Event, CharacterController, KillEffectController, ReplicateController
 function Controller:Init()
     Constants = shared.Import "Constants"
     Event = shared.Import "Event"
     CharacterController = shared.Import "CharacterController"
     KillEffectController = shared.Import "KillEffectController"
+    ReplicateController = shared.Import "ReplicateController"
 
     Controller.PlayerAnimations = {}
 
@@ -25,20 +26,10 @@ function Controller:Init()
             Controller.PlayerAnimations[Player].Slide:Stop()
         end
     end)
+end
 
-    --task.spawn(function()
-    --    while task.wait(1) do
-    --        Event:FireAllClients("PlaySound", Vector3.new(-25, 79.01, 10.554), ReplicatedStorage.Assets.Weapons.M4A1.Sounds.Shoot)
---
-    --        Event:FireAllClients(
-    --            "FireProjectile", 
-    --            workspace.Ignore, 
-    --            ReplicatedStorage.Assets.Weapons.M4A1, 
-    --            Vector3.new(-25, 79.01, 10.554), 
-    --            Vector3.new(1, 0, 0)
-    --        )
-    --    end
-    --end)
+function Controller:ServerProjectile(Ignore:BasePart | Model, Config:ModuleScript, Origin:Vector3, Direction:Vector3)
+    task.spawn(ReplicateController.FireProjectile, Ignore, Config, Origin, Direction)
 end
 
 function Controller.PlayerAdded(Player: Player)
@@ -169,12 +160,14 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
     -- Validate weapon
     if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
 
-    -- Validate player
-    local Character = Player.Character
-    if not Character then return false end
+    -- Validate playerw
+    if Player then
+        local Character = Player.Character
+        if not Character then return false end
 
-    local Health = Character:GetAttribute("Health")
-    if not Health or Health <= 0 then return false end
+        local Health = Character:GetAttribute("Health")
+        if not Health or Health <= 0 then return false end
+    end
 
     --TODO: CHECK WEAPON STATS (Bullets, Damage, etc)
 

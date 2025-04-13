@@ -419,7 +419,7 @@ end
 -----------------------------------------------------------
 
 -- Ctor
-function ActiveCastStatic.new(caster: Caster, origin: Vector3, direction: Vector3, velocity: Vector3 | number, cosmeticOffset: Vector3, castDataPacket: FastCastBehavior): ActiveCast
+function ActiveCastStatic.new(caster: Caster, origin: Vector3, direction: Vector3, velocity: Vector3 | number, cosmeticOffset: Vector3, castDataPacket: FastCastBehavior, WeaponConfig): ActiveCast
 	if typeof(velocity) == "number" then
 		velocity = direction.Unit * velocity
 	end	
@@ -464,8 +464,9 @@ function ActiveCastStatic.new(caster: Caster, origin: Vector3, direction: Vector
 		},
 		
 		UserData = {
-			CosmeticOffset = cosmeticOffset
-		}
+			CosmeticOffset = cosmeticOffset,
+			WeaponConfig = WeaponConfig
+		},
 	}
 	
 	if cast.StateInfo.HighFidelityBehavior == 2 then

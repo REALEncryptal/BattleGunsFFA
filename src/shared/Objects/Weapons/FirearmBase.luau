@@ -2,10 +2,6 @@ local CollectionService = game:GetService("CollectionService")
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SoundService = game:GetService("SoundService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 local WeaponBase = require(script.Parent.WeaponBase)
 
 local FirearmBase = setmetatable({}, WeaponBase)
@@ -42,23 +38,28 @@ function FirearmBase.new(Weapon)
         shared.Import("InterfaceController"):TweenAmmoUi()
     end)
 
-    -- TODO: MOBILE SUPPORT
-    ContextActionService:BindAction("Reload", function(_, Type)
+    -- inputs
+    local InputUtil = shared.Import "InputUtil"
+
+    InputUtil:BindAction("Reload", function(_, Type)
         if not Type == Enum.UserInputState.Begin then return end
         self:Reload()
     end, true, Enum.KeyCode.R)
 
-    ContextActionService:BindAction("ADS", function(_, Type)
+    InputUtil:BindAction("ADS", function(_, Type)
         self:ADS(Type == Enum.UserInputState.Begin)
     end, true, Enum.UserInputType.MouseButton2)--, Enum.KeyCode.LeftShift)
 
-    ContextActionService:BindAction("Fire", function(_, Type)
+    InputUtil:BindAction("Fire", function(_, Type)
         self.IsFirePressed = Type == Enum.UserInputState.Begin
     end, true, Enum.UserInputType.MouseButton1)
 
+    shared.Import("InterfaceController"):SetupMobileControls()
+
     self.Trove:Add(function()
-        ContextActionService:UnbindAction("Reload")
-        ContextActionService:UnbindAction("ADS")
+        InputUtil:UnbindAction("Reload")
+        InputUtil:UnbindAction("ADS")
+        InputUtil:UnbindAction("Fire")
 
         self:ADS(false)
         self.Animations.Reload:Stop()

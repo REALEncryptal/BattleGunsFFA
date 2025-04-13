@@ -3,7 +3,7 @@ local INF = math.huge
 local Constants = {
     -- PLACE
     VERSION = 1,
-    DEBUG = true,
+    DEBUG = false,
     LOOP = true, -- run the game loop
     SHOW_CASTS = false, -- show debug casts
     SHOW_MOVE_CASTS = false, -- show debug move casts
@@ -60,7 +60,7 @@ local Constants = {
     SPEED_CAP = 75, -- Absolute max speed
     JUMP_HEIGHT = 6,
 
-    SPEED = 21,
+    SPEED = 40,
     ACCEL = 3, -- Multiplied by delta time then added to speed every frame'
     ACCEL_AIR = 2,
     DECEL = 20, -- Only applies when no wish direction
@@ -78,6 +78,11 @@ local Constants = {
     SLIDE_MIN_TIME = 0.15, -- how long the player must be sliding before they can cancel
     SLIDE_CLIFF_BOOST_VERTICAL = 10, -- how much to boost the player up when sliding off an dege
     SLIDE_CLIFF_BOOST_HORIZONTAL = 10, -- how much to boost the player forward
+
+
+    SLIDE_SPEED = 50,
+    SLIDE_TIME = 2,
+
 
     -- MOVEMENT LEGACY
     JUMP = 380,

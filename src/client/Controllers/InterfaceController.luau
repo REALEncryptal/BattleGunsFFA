@@ -24,7 +24,8 @@ local
     WeaponController, 
     Spring3, 
     PlaySound,
-    SoundtrackController
+    SoundtrackController,
+    InputUtil
 
 function Controller:Init()
     Event = shared.Import "Event"
@@ -36,6 +37,7 @@ function Controller:Init()
     Spring3 = shared.Import "Spring3"
     PlaySound = shared.Import "PlaySound"
     SoundtrackController = shared.Import "SoundtrackController"
+    InputUtil = shared.Import "InputUtil"
 
     Controller.SpreadAngle = 0
     Controller.Crosshair = nil
@@ -80,6 +82,24 @@ function Controller:Init()
     end
 end
 
+-- mobile controls
+function Controller:SetupMobileControls()
+    local FireButton:ImageButton = InputUtil:GetButton("Fire")
+    InputUtil:SetPosition("Fire",UDim2.new(
+        FireButton.Position.X.Scale,
+        FireButton.Position.X.Offset - FireButton.Size.X.Offset/2,
+        FireButton.Position.Y.Scale,
+        FireButton.Position.Y.Offset - FireButton.Size.Y.Offset*2
+    ))
+    InputUtil:SetSize("Fire", FireButton.Size.X.Offset*1.5)
+
+    InputUtil:SetDragCallback("Fire", function(Offset, DeltaTime)
+        print(Offset, DeltaTime)
+    end)
+end
+
+
+-- splats
 function Controller:SetupSplats()
     local SplatContainer = Controller.Gui:WaitForChild("Splats")
 
@@ -127,7 +147,6 @@ function Controller:SetupKillStreak()
 
     local function ListenToPlayer(Player)
         Player:GetAttributeChangedSignal("KillStreak"):Connect(function()
-            print("Kill streak changed")
             Controller.KillStreakLeader = Controller:GetKillStreakLeader()
             Controller:UpdateKillStreak()
         end)
@@ -149,6 +168,7 @@ function Controller:SetupKillStreak()
 end
 
 function Controller:UpdateKillStreak()
+    if not Controller.KillStreakLeader then return end
     local Kills = Controller.KillStreakLeader:GetAttribute("KillStreak")
 
     if Kills <= Constants.MIN_KILLSTREAK then
@@ -178,6 +198,7 @@ function Controller:GetKillStreakLeader():Player
 
     for _, Player:Player in ipairs(Players:GetPlayers()) do
         local Streak = Player:GetAttribute("KillStreak")
+        if not Streak then continue end
 
         if Streak > MaxStreak then
             MaxStreak = Streak
@@ -234,7 +255,6 @@ end
 
 -- LOADING SCREEN
 function Controller:SetupLoadingScreen()
-    local Sound = PlaySound(ReplicatedStorage.Assets.SFX.HeliWars)
     local LoadingScreen = Controller.Gui.Screens:WaitForChild("Loading")
 
     LoadingScreen.Visible = true
@@ -242,9 +262,8 @@ function Controller:SetupLoadingScreen()
     game.Players.LocalPlayer.AttributeChanged:Connect(function(Attribute)
         if Attribute == "Loaded" then
             LoadingScreen.Visible = false
-            Sound:Stop()
 
-            SoundtrackController:Play()
+            --SoundtrackController:Play()
         end
     end)
 end

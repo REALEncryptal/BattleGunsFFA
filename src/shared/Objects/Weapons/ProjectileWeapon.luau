@@ -27,7 +27,7 @@ function ProjectileWeapon.new(Weapon)
     self.CastBehaviour.CosmeticBulletContainer = workspace.Ignore
 
     -- events
-    self.Caster.RayHit:Connect(function(_, RaycastResult:RaycastResult, _, _)
+    self.Caster.RayHit:Connect(function(_, RaycastResult:RaycastResult, _,_)
         self:BulletHit(RaycastResult)
     end)
 
@@ -68,6 +68,7 @@ function ProjectileWeapon:FunctionalValidateHit(RaycastResult:RaycastResult)
 end
 
 function ProjectileWeapon:FunctionalFire(Origin:Vector3, SpreadDirection:Vector3, Params:RaycastParams)
+    self:UpdateCastBehaviour()
     -- looks like the bullet is fired from the tip of the weapon
     local offset = self.Weapon.PrimaryPart.Tip.WorldCFrame.Position - workspace.CurrentCamera.CFrame.Position
 
