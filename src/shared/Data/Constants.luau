@@ -4,7 +4,7 @@ local Constants = {
     -- PLACE
     VERSION = 1,
     DEBUG = false,
-    LOOP = true, -- run the game loop
+    LOOP = false, -- run the game loop
     SHOW_CASTS = false, -- show debug casts
     SHOW_MOVE_CASTS = false, -- show debug move casts
     SHOW_SOUNDS = false, -- show where sounds are coming from and what they are

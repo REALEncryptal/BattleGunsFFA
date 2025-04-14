@@ -29,7 +29,26 @@ function Controller:Init()
 end
 
 function Controller:ServerProjectile(Ignore:BasePart | Model, Config:ModuleScript, Origin:Vector3, Direction:Vector3)
-    task.spawn(ReplicateController.FireProjectile, Ignore, Config, Origin, Direction)
+    local Data = require(Config)
+    
+    for _=1, Data.BulletsPerShot do
+        -- Generate a random angle and a random radius within the spread circle
+        local SpreadRadius = math.rad(Data.Spread) -- Maximum spread radius in radians
+
+        local RandomAngle = math.random() * 2 * math.pi -- Random angle in the circular area
+        local RandomRadius = math.sqrt(math.random()) * SpreadRadius -- Random distance from the center
+            
+        -- Calculate spread components based on the random angle and radius
+        local SpreadX = math.cos(RandomAngle) * RandomRadius
+        local SpreadY = math.sin(RandomAngle) * RandomRadius
+            
+        -- Apply the spread to the direction vector
+        local SpreadDirection = (CFrame.new(Origin, Origin + Direction) 
+            * CFrame.Angles(SpreadY, SpreadX, 0)).LookVector * 10000
+
+        task.spawn(ReplicateController.FireProjectile, Ignore, Config, Origin, SpreadDirection)
+        Event:FireAllClients("FireProjectile", Ignore, Config, Origin, SpreadDirection)
+    end
 end
 
 function Controller.PlayerAdded(Player: Player)
@@ -84,8 +103,15 @@ function Controller.CharacterAdded(Character, Player)
 
         -- has a killer only
         if not Character:GetAttribute("LastHitBy") then return end
-
+        if not Character:GetAttribute("LastHitBy")==0 then return end
         local Killer = game.Players:GetPlayerByUserId(Character:GetAttribute("LastHitBy"))
+        if not Killer then
+            KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild("Conffeti"), Character, nil, Character.PrimaryPart.CFrame)
+        else
+            KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"), Character, Killer, Character.PrimaryPart.CFrame)
+        end
+        
+        if not Killer then return end
 
         -- award killer
         if Killer then
@@ -107,7 +133,6 @@ function Controller.CharacterAdded(Character, Player)
 
         -- effects
         Event:FireClient(Killer, "Kill", Player or Character)
-        KillEffectController:KillEffect(ReplicatedStorage.Assets.KillEffects:FindFirstChild(Killer.Data:GetAttribute("KillEffect") or "Conffeti"), Character, Killer, Character.PrimaryPart.CFrame)
     end)
 
     if Player then
@@ -154,25 +179,35 @@ function Controller.FireProjectile(Player:Player, Weapon:Model, Origin:Vector3, 
 end
 
 -- Shot validation
-function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3, Instance: Instance, Normal:Vector3): boolean
+function Controller.RaycastWeapon(Player:Player|Model, Weapon:any, Position: Vector3, Instance: Instance, Normal:Vector3): boolean
     if not Instance then return false end
 
     -- Validate weapon
-    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
+    if Player:IsA("Player") then
+        if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
 
-    -- Validate playerw
-    if Player then
-        local Character = Player.Character
-        if not Character then return false end
+        -- Validate playerw
+        if Player then
+            local Character = Player.Character
+            if not Character then return false end
 
-        local Health = Character:GetAttribute("Health")
-        if not Health or Health <= 0 then return false end
+            local Health = Character:GetAttribute("Health")
+            if not Health or Health <= 0 then return false end
+        end
+
+        Controller:PlaySound(Player.Character.Head.Position, Weapon.Sounds.Shoot, Player)
+    else
+        if Player:FindFirstChild("Humanoid") then
+            local Health = Player.Humanoid.Health
+            if not Health or Health <= 0 then return false end
+        end
     end
+
 
     --TODO: CHECK WEAPON STATS (Bullets, Damage, etc)
 
     -- Play Sound
-    Controller:PlaySound(Player.Character.Head.Position, Weapon.Sounds.Shoot, Player)
+    
 
     -- Raycast
 
@@ -188,7 +223,7 @@ function Controller.RaycastWeapon(Player:Player, Weapon:Model, Position: Vector3
     end
 
     -- Create bullet hole
-    local Config = require(Weapon:FindFirstChild("Configuration"))
+    local Config = typeof(Weapon) == "Instance" and require(Weapon:FindFirstChild("Configuration")) or Weapon
 
     if Config.CreateBulletHole then
         task.spawn(Config.CreateBulletHole, Player, Position, Instance, Normal)
@@ -258,19 +293,24 @@ function Controller:PlaySound(Position: Vector3, Sound: Sound, ExcludedPlayer:Pl
 end
 
 -- Bullet hit
-function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:Instance): boolean
-    if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
+function Controller:BulletHit(Player:Player|Model, Weapon:any, Position:Vector3, Instance:Instance): boolean
+    if Player:IsA("Player") then
+        if not ReplicatedStorage.Assets.Weapons:FindFirstChild(Weapon.Name) and not ReplicatedStorage.Assets.AdminWeapons:FindFirstChild(Weapon.Name) then return false end
+    end
 
-    local Config = require(Weapon:FindFirstChild("Configuration"))
+    local Config = typeof(Weapon) == "Instance" and require(Weapon:FindFirstChild("Configuration")) or Weapon
 
     if Config.BulletHitEvent then
         task.spawn(Config.BulletHitEvent, Player, Position, Instance)
     end
 
     -- Damage
+    if not Instance then return false end
+    
     local IsHeadShot = Instance.Name == "Head"
 
     Instance = Instance.Parent
+    if not Instance then return false end
 
     local Health = Instance:GetAttribute("Health")
     local Damage = Config.Damage * (IsHeadShot and Config.HeadshotMultiplier or 1)
@@ -278,7 +318,11 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
         Health -= Damage
         Instance:SetAttribute("Health", Health)
     else
-        Instance.Humanoid.Health = Instance.Humanoid.Health - Damage
+        if Instance:FindFirstChild("Humanoid") then
+            Instance.Humanoid.Health = Instance.Humanoid.Health - Damage
+        else
+            return false
+        end
     end
 
     local Victim = game.Players:GetPlayerFromCharacter(Instance)
@@ -291,7 +335,11 @@ function Controller:BulletHit(Player, Weapon:Model, Position:Vector3, Instance:I
     end
     
     Instance:SetAttribute("LastHit", tick())
-    Instance:SetAttribute("LastHitBy", Player.UserId)
+    if Player:IsA("Player") then
+        Instance:SetAttribute("LastHitBy", Player.UserId)
+    else
+        Instance:SetAttribute("LastHitBy", 0)
+    end
     Instance:SetAttribute("LastHitHeadshot", IsHeadShot)
 
     return true

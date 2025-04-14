@@ -14,8 +14,8 @@ function Controller:Init()
 
     -- caster events
     Controller.Caster.RayHit:Connect(function(cast, RaycastResult:RaycastResult, _, _)
-        if cast.WeaponConfig.ImpactEffect then
-            task.spawn(cast.WeaponConfig.ImpactEffect, RaycastResult)
+        if cast.UserData.WeaponConfig.ImpactEffect then
+            task.spawn(cast.UserData.WeaponConfig.ImpactEffect, RaycastResult)
             return
         end
         ImpactEffect(RaycastResult)
@@ -52,7 +52,7 @@ function Controller.FireProjectile(Attacker:Model, Weapon: Model | ModuleScript,
     local WeaponConfig =  require(ConfigModule)
     local Behaviour  = Controller:NewBehaviour(Attacker, WeaponConfig)
 
-    Controller.Caster:Fire(Origin, Direction, WeaponConfig.BulletVelocity or Constants.BULLET_SPEED, Vector3.zero, Behaviour, WeaponConfig)
+    Controller.Caster:Fire(Origin, Direction, WeaponConfig.BulletVelocity or Constants.BULLET_SPEED, Vector3.zero, Behaviour, WeaponConfig, Attacker)
 end
 
 --

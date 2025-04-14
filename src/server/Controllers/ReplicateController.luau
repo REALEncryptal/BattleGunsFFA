@@ -12,8 +12,8 @@ function Controller:Init()
 
     -- caster events
     Controller.Caster.RayHit:Connect(function(cast, RaycastResult:RaycastResult, _, _)
-        print("Big Black Something Else")
-        WeaponController.RaycastWeapon(nil, cast.UserData.Config, RaycastResult.Position, RaycastResult.Instance, RaycastResult.Normal)
+        if not RaycastResult then return end
+        WeaponController.RaycastWeapon(cast.UserData.Character, cast.UserData.WeaponConfig, RaycastResult.Position, RaycastResult.Instance, RaycastResult.Normal)
     end)
 
     Controller.Caster.LengthChanged:Connect(function(cast, segmentOrigin, segmentDirection, length, _, cosmeticBulletObject)
@@ -37,13 +37,13 @@ end
 function Controller.FireProjectile(Attacker:Model, Weapon: Model | ModuleScript, Origin: Vector3, Direction: Vector3)
     local ConfigModule = Weapon:IsA("ModuleScript") and Weapon or Weapon:FindFirstChild("Configuration")
     local WeaponConfig =  require(ConfigModule)
-    local Behaviour  = Controller:NewBehaviour(Attacker, WeaponConfig)
+    local Behaviour  = Controller:NewBehaviour(Attacker)
 
-    Controller.Caster:Fire(Origin, Direction, WeaponConfig.BulletVelocity or Constants.BULLET_SPEED, Vector3.zero, Behaviour, WeaponConfig)
+    Controller.Caster:Fire(Origin, Direction, WeaponConfig.BulletVelocity or Constants.BULLET_SPEED, Vector3.zero, Behaviour, WeaponConfig, Attacker)
 end
 
 --
-function Controller:NewBehaviour(Attacker:Model|BasePart, Config)
+function Controller:NewBehaviour(Attacker:Model|BasePart)
     local Params = RaycastParams.new()
     Params.FilterType = Enum.RaycastFilterType.Blacklist
     Params.FilterDescendantsInstances = {workspace.Ignore, Attacker}

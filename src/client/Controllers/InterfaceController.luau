@@ -54,8 +54,9 @@ function Controller:Init()
         Controller:KillResult(Player)
     end)
 
-    Event:Listen("Hit", function(Attacker:Player, IsHeadShot)
-        Controller:DamageIndicator(Attacker.Character.PrimaryPart.Position)
+    Event:Listen("Hit", function(Attacker:Player|Model, IsHeadShot)
+        local Part = Attacker:IsA("Player") and Attacker.Character.PrimaryPart or Attacker.PrimaryPart
+        Controller:DamageIndicator(Part.Position)
     end)
 
     -- Setup Frames

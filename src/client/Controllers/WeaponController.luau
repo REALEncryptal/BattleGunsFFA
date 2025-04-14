@@ -60,7 +60,7 @@ function Controller._CharacterAdded(Character)
 
         if Character:GetAttribute("LastHitBy") then
             local Killer = game.Players:GetPlayerByUserId(Character:GetAttribute("LastHitBy"))
-            
+            if not Killer then return end
             Camera:KilledBy(Killer)
         end
     end)
